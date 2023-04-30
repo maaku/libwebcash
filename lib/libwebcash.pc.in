@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libwebcash
+Description: A straight-C library for webcash wallet management.
+URL: https://github.com/maaku/libwebcash
+Version: @PACKAGE_VERSION@
+Cflags: -I${includedir}
+Libs.private: @WEBCASH_LIBS@
+Libs: -L${libdir} -lwebcash
