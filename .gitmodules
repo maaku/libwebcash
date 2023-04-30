@@ -1,3 +1,6 @@
 [submodule "libsha2"]
 	path = libsha2
 	url = https://github.com/maaku/libsha2
+[submodule "googletest"]
+	path = googletest
+	url = https://github.com/google/googletest

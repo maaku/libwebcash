@@ -64,7 +64,7 @@ dnl libsha2 -- use system or included?
 AX_CHECK_SHA2
 
 AC_CONFIG_HEADERS([lib/config/libwebcash-config.h])
-AC_CONFIG_FILES([Makefile lib/Makefile lib/libwebcash.pc])
+AC_CONFIG_FILES([Makefile lib/Makefile lib/libwebcash.pc test/Makefile])
 
 dnl make sure nothing new is exported so that we don't break the cache
 PKGCONFIG_PATH_TEMP="$PKG_CONFIG_PATH"
