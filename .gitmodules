@@ -1,6 +1,9 @@
-[submodule "libsha2"]
-	path = libsha2
+[submodule "depends/libsha2"]
+	path = depends/libsha2
 	url = https://github.com/maaku/libsha2
-[submodule "googletest"]
-	path = googletest
+[submodule "depends/googletest"]
+	path = depends/googletest
 	url = https://github.com/google/googletest
+[submodule "depends/bstring"]
+	path = depends/bstring
+	url = https://github.com/msteinert/bstring

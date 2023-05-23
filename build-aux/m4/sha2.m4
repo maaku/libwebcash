@@ -15,8 +15,8 @@ AC_DEFUN([AX_CHECK_SHA2], [
     fi
 
     if test "x$with_included_sha2" = "xyes"; then
-        SHA2_LDFLAGS='$(top_builddir)/libsha2/src/libsha2.la'
-        SHA2_CPPFLAGS='-I$(top_srcdir)/libsha2/include'
+        SHA2_LDFLAGS='$(top_builddir)/depends/libsha2/src/libsha2.la'
+        SHA2_CPPFLAGS='-I$(top_srcdir)/depends/libsha2/include'
     else
         SHA2_LDFLAGS='-lsha2'
     fi
@@ -24,7 +24,7 @@ AC_DEFUN([AX_CHECK_SHA2], [
     # We always configure the local copy of libsha2.  This is needed to ensure
     # that it is distributed properly, irregarless of whether we use it or not
     # in this build.
-    AC_CONFIG_SUBDIRS([libsha2])
+    AC_CONFIG_SUBDIRS([depends/libsha2])
 
     AM_CONDITIONAL([WITH_INCLUDED_SHA2], [test "x$with_included_sha2" = "xyes"])
     AC_SUBST([SHA2_LDFLAGS])
