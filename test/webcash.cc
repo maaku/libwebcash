@@ -13,12 +13,12 @@ TEST(gtest, wc_zero) {
         wc_amount_t init = 0;
         wc_amount_t defn = WC_ZERO;
         wc_amount_t func = wc_zero();
-        ASSERT_EQ(init, 0);
-        ASSERT_EQ(defn, 0);
-        ASSERT_EQ(func, 0);
-        ASSERT_EQ(init, defn);
-        ASSERT_EQ(init, func);
-        ASSERT_EQ(defn, func);
+        EXPECT_EQ(init, 0);
+        EXPECT_EQ(defn, 0);
+        EXPECT_EQ(func, 0);
+        EXPECT_EQ(init, defn);
+        EXPECT_EQ(init, func);
+        EXPECT_EQ(defn, func);
 }
 
 TEST(gtest, wc_from_string) {
