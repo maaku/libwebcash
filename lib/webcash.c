@@ -11,7 +11,7 @@
 #include <stdint.h>
 
 wc_amount_t wc_zero(void) {
-    return WC_ZERO;
+        return WC_ZERO;
 }
 
 wc_error_t wc_from_cstring(wc_amount_t *amt, const char *str) {
