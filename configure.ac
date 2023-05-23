@@ -60,6 +60,9 @@ AC_C_RESTRICT
 
 AX_CHECK_COMPILE_FLAG([-Werror], [CFLAG_WERROR="-Werror"], [CFLAG_WERROR=""])
 
+dnl bstring -- use system or included?
+AX_CHECK_BSTRING
+
 dnl libsha2 -- use system or included?
 AX_CHECK_SHA2
 
