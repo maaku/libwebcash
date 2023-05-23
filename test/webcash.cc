@@ -9,10 +9,17 @@
 
 #include <webcash.h>
 
-TEST(gtest, assert_eq)
+TEST(gtest, wc_zero)
 {
-        ASSERT_EQ(0, 0);
-        ASSERT_NE(0, 1);
+        wc_amount_t init = 0;
+        wc_amount_t defn = WC_ZERO;
+        wc_amount_t func = wc_zero();
+        ASSERT_EQ(init, 0);
+        ASSERT_EQ(defn, 0);
+        ASSERT_EQ(func, 0);
+        ASSERT_EQ(init, defn);
+        ASSERT_EQ(init, func);
+        ASSERT_EQ(defn, func);
 }
 
 int main(int argc, char **argv)

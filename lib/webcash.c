@@ -8,8 +8,9 @@
 
 #include "webcash.h"
 
-/* Include a stub function so that the library isn't devoid of symbols. */
-void webcash_dummy(void) {}
+wc_amount_t wc_zero(void) {
+    return WC_ZERO;
+}
 
 /* End of File
  */
