@@ -66,3 +66,4 @@ libtool
 *.rej
 *.swp
 *.tmp
+.vscode
