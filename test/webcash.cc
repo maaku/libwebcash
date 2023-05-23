@@ -9,8 +9,7 @@
 
 #include <webcash.h>
 
-TEST(gtest, wc_zero)
-{
+TEST(gtest, wc_zero) {
         wc_amount_t init = 0;
         wc_amount_t defn = WC_ZERO;
         wc_amount_t func = wc_zero();
@@ -22,10 +21,8 @@ TEST(gtest, wc_zero)
         ASSERT_EQ(defn, func);
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
         ::testing::InitGoogleTest(&argc, argv);
-
         return RUN_ALL_TESTS();
 }
 
