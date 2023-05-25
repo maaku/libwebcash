@@ -140,7 +140,7 @@ wc_error_t wc_from_bstring(wc_amount_t *amt, int *noncanonical, bstring str) {
         }
 
         /* Scale by any elided fractional digits. */
-        while ( j++ < 8) {
+        while (j++ < 8) {
                 /* Overflow checked arithmetic. */
                 if (u64 > (UINT64_MAX / 10)) {
                         return WC_ERROR_OVERFLOW;
