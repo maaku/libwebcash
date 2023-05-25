@@ -8,6 +8,7 @@
 #include "webcash.h"
 
 #include <ctype.h>
+#include <inttypes.h>
 #include <stdint.h>
 
 wc_amount_t wc_zero(void) {
@@ -167,6 +168,34 @@ wc_error_t wc_from_bstring(wc_amount_t *amt, int *noncanonical, bstring str) {
         }
         *amt = is_negative ? -u64 : u64;
         return WC_SUCCESS;
+}
+
+bstring wc_to_bstring(wc_amount_t amount) {
+        int64_t quot = 0;
+        int64_t rem = 0;
+        int is_negative = 0;
+        bstring str = NULL;
+        if (amount < 0) {
+                /* We handle this as a special case because otherwise the
+                 * negation below would overflow. */
+                if (amount == INT64_MIN) {
+                        return cstr2bstr("-92233720368.54775808");
+                }
+                /* Otherwise we remember it is negative and calculate its
+                 * absolute value. */
+                is_negative = 1;
+                amount = -amount;
+        }
+        quot = amount / WC_AMOUNT_SCALE;
+        rem = amount % WC_AMOUNT_SCALE;
+        if (rem == 0) {
+                return bformat("%s%" PRId64, is_negative ? "-" : "", quot);
+        }
+        str = bformat("%s%" PRId64 ".%08" PRId64, is_negative ? "-" : "", quot, rem);
+        while (str->slen > 0 && str->data[str->slen - 1] == '0') {
+                btrunc(str, str->slen - 1);
+        }
+        return str;
 }
 
 /* End of File

@@ -29,10 +29,17 @@ static void test_cstring(
 ) {
         wc_amount_t amt2 = -1;
         int noncanonical2 = -1;
+        bstring bstr = NULL;
         EXPECT_EQ(wc_from_cstring(&amt2, &noncanonical2, str), err);
         if (err == WC_SUCCESS) {
                 EXPECT_EQ(amt2, amt);
                 EXPECT_EQ(noncanonical2, !!noncanonical);
+                bstr = wc_to_bstring(amt);
+                EXPECT_TRUE(bstr != NULL);
+                if (bstr) {
+                        EXPECT_EQ(bstr->slen == strlen(str) && !memcmp(bstr->data, str, bstr->slen), !noncanonical);
+                        bdestroy(bstr); bstr = NULL;
+                }
         } else {
                 EXPECT_EQ(amt2, -1);
                 EXPECT_EQ(noncanonical2, -1);

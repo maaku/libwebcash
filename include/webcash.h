@@ -26,6 +26,7 @@ typedef int wc_error_t;
  * @brief A webcash value / amount.
  */
 typedef int64_t wc_amount_t;
+#define WC_AMOUNT_SCALE ((wc_amount_t)100000000LL)
 
 /**
  * @brief Zero-initialization for wc_amount_t variables.
@@ -91,6 +92,20 @@ wc_error_t wc_from_cstring(wc_amount_t *amt, int *mutated, const char *str);
  * error code otherwise.
  */
 wc_error_t wc_from_bstring(wc_amount_t *amt, int *mutated, bstring str);
+
+/**
+ * @brief Convert a wc_amount_t to a bstring.
+ *
+ * This function converts a wc_amount_t to a bstring containing a decimal
+ * number representation of the webcash value.  The resulting string will
+ * contain a decimal point if the amount represent a fractional webcash value,
+ * but no other characters.  Up to 8 digits after the decimal point may be
+ * generated, so long as the trailing digit is nonzero.
+ *
+ * @param amount The wc_amount_t to convert.
+ * @return bstring A bstring containing a decimal number representation of the webcash value.
+ */
+bstring wc_to_bstring(wc_amount_t amount);
 
 #ifdef __cplusplus
 }
