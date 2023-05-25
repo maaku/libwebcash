@@ -21,32 +21,56 @@ TEST(gtest, wc_zero) {
         EXPECT_EQ(defn, func);
 }
 
+static void test_cstring(
+        const char *str,
+        wc_error_t err,
+        wc_amount_t amt = 0,
+        bool noncanonical = false
+) {
+        wc_amount_t amt2 = -1;
+        int noncanonical2 = -1;
+        EXPECT_EQ(wc_from_cstring(&amt2, &noncanonical2, str), err);
+        if (err == WC_SUCCESS) {
+                EXPECT_EQ(amt2, amt);
+                EXPECT_EQ(noncanonical2, !!noncanonical);
+        } else {
+                EXPECT_EQ(amt2, -1);
+                EXPECT_EQ(noncanonical2, -1);
+        }
+}
+
 TEST(gtest, wc_from_string) {
-        wc_amount_t amt = WC_ZERO;
-        EXPECT_EQ(wc_from_cstring(&amt, "0"), WC_SUCCESS); EXPECT_EQ(amt, 0LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "0.0"), WC_SUCCESS); EXPECT_EQ(amt, 0LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "0.00000000"), WC_SUCCESS); EXPECT_EQ(amt, 0LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "0.00000001"), WC_SUCCESS); EXPECT_EQ(amt, 1LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "1.00000000"), WC_SUCCESS); EXPECT_EQ(amt, 100000000LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "1.00000001"), WC_SUCCESS); EXPECT_EQ(amt, 100000001LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "1.00000010"), WC_SUCCESS); EXPECT_EQ(amt, 100000010LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "1.00000100"), WC_SUCCESS); EXPECT_EQ(amt, 100000100LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "1.00001000"), WC_SUCCESS); EXPECT_EQ(amt, 100001000LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "1.00010000"), WC_SUCCESS); EXPECT_EQ(amt, 100010000LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "1.00100000"), WC_SUCCESS); EXPECT_EQ(amt, 100100000LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "1.01000000"), WC_SUCCESS); EXPECT_EQ(amt, 101000000LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "1.10000000"), WC_SUCCESS); EXPECT_EQ(amt, 110000000LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "1.1000000"), WC_SUCCESS); EXPECT_EQ(amt, 110000000LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "1.100000"), WC_SUCCESS); EXPECT_EQ(amt, 110000000LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "1.10000"), WC_SUCCESS); EXPECT_EQ(amt, 110000000LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "1.1000"), WC_SUCCESS); EXPECT_EQ(amt, 110000000LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "1.100"), WC_SUCCESS); EXPECT_EQ(amt, 110000000LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "1.10"), WC_SUCCESS); EXPECT_EQ(amt, 110000000LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "1.1"), WC_SUCCESS); EXPECT_EQ(amt, 110000000LL);
-        EXPECT_EQ(wc_from_cstring(&amt, "1."), WC_ERROR_INVALID_ARGUMENT);
-        EXPECT_EQ(wc_from_cstring(&amt, "1"), WC_SUCCESS); EXPECT_EQ(amt, 100000000LL);
-        amt = -1LL;
-        EXPECT_EQ(wc_from_cstring(&amt, "1.000000000"), WC_ERROR_INVALID_ARGUMENT);
+        test_cstring("0", WC_SUCCESS, 0);
+        test_cstring("0.", WC_SUCCESS, 0, true);
+        test_cstring("0.0", WC_SUCCESS, 0, true);
+        test_cstring("0.00", WC_SUCCESS, 0, true);
+        test_cstring("0.000", WC_SUCCESS, 0, true);
+        test_cstring("0.0000", WC_SUCCESS, 0, true);
+        test_cstring("0.00000", WC_SUCCESS, 0, true);
+        test_cstring("0.000000", WC_SUCCESS, 0, true);
+        test_cstring("0.0000000", WC_SUCCESS, 0, true);
+        test_cstring("0.00000000", WC_SUCCESS, 0, true);
+        test_cstring("0.000000001", WC_ERROR_INVALID_ARGUMENT);
+        test_cstring("0.00000001", WC_SUCCESS, 1);
+        test_cstring("1.00000000", WC_SUCCESS, 100000000, true);
+        test_cstring("1.00000001", WC_SUCCESS, 100000001);
+        test_cstring("1.00000010", WC_SUCCESS, 100000010, true);
+        test_cstring("1.00000100", WC_SUCCESS, 100000100, true);
+        test_cstring("1.00001000", WC_SUCCESS, 100001000, true);
+        test_cstring("1.00010000", WC_SUCCESS, 100010000, true);
+        test_cstring("1.00100000", WC_SUCCESS, 100100000, true);
+        test_cstring("1.01000000", WC_SUCCESS, 101000000, true);
+        test_cstring("1.10000000", WC_SUCCESS, 110000000, true);
+        test_cstring("1.1000000", WC_SUCCESS, 110000000, true);
+        test_cstring("1.100000", WC_SUCCESS, 110000000, true);
+        test_cstring("1.10000", WC_SUCCESS, 110000000, true);
+        test_cstring("1.1000", WC_SUCCESS, 110000000, true);
+        test_cstring("1.100", WC_SUCCESS, 110000000, true);
+        test_cstring("1.10", WC_SUCCESS, 110000000, true);
+        test_cstring("1.1", WC_SUCCESS, 110000000);
+        test_cstring("1", WC_SUCCESS, 100000000);
+        test_cstring("1.", WC_SUCCESS, 100000000, true);
+        test_cstring("1.000000000", WC_SUCCESS, 100000000, true);
 }
 
 int main(int argc, char **argv) {

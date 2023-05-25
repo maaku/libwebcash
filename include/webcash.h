@@ -56,36 +56,41 @@ wc_amount_t wc_zero(void);
  *
  * This function converts a C string containing a decimal number
  * representation of a webcash value to a wc_amount_t.  The string may
- * optionally contain a decimal point, but no other characters.  Up to 8
- * digits after the decimal point are supported.  The resulting wc_amount_t
- * value is scaled by 10^8 so that that the value can be stored as an integer.
- *
- * For compatibility reasons, negative amounts with a prefixed minus sign are
- * understood, and a single enclosing pair of quotes are ignored, if present.
+ * optionally contain a minus sign prefix and/or a decimal point, but no other
+ * characters.  Up to 8 digits after the decimal point are supported.  The
+ * resulting wc_amount_t value is scaled by 10^8 so that that the value can be
+ * stored as an integer.
  *
  * @param amt A pointer to a wc_amount_t to receive the parsed value.
- * @param str A C string containing a decimal number representation of a webcash value.
- * @return wc_error_t WC_SUCCESS if the string was successfully parsed, or an error code otherwise.
+ * @param noncanonical An optional pointer to an int to receive a flag
+ * indicating whether the parsed representation was found to be in canonical
+ * format (0) or not (1).  May be NULL if not needed.
+ * @param str A C string containing a decimal number representation of a
+ * webcash value.
+ * @return wc_error_t WC_SUCCESS if the string was successfully parsed, or an
+ * error code otherwise.
  */
-wc_error_t wc_from_cstring(wc_amount_t *amt, const char *str);
+wc_error_t wc_from_cstring(wc_amount_t *amt, int *mutated, const char *str);
 
 /**
  * @brief Convert a bstring to a wc_amount_t.
  *
  * This function converts a bstring containing a decimal number representation
  * of a webcash value to a wc_amount_t.  The string may optionally contain a
- * decimal point, but no other characters.  Up to 8 digits after the decimal
- * point are supported.  The resulting wc_amount_t value is scaled by 10^8 so
- * that that the value can be stored as an integer.
- *
- * For compatibility reasons, negative amounts with a prefixed minus sign are
- * understood, and a single enclosing pair of quotes are ignored, if present.
+ * minus sign prefix and/or a decimal point, but no other characters.  Up to 8
+ * digits after the decimal point are supported.  The resulting wc_amount_t
+ * value is scaled by 10^8 so that that the value can be stored as an integer.
  *
  * @param amt A pointer to a wc_amount_t to receive the parsed value.
- * @param str A bstring containing a decimal number representation of a webcash value.
- * @return wc_error_t WC_SUCCESS if the string was successfully parsed, or an error code otherwise.
+ * @param noncanonical An optional pointer to an int to receive a flag
+ * indicating whether the parsed representation was found to be in canonical
+ * format (0) or not (1).  May be NULL if not needed.
+ * @param str A bstring containing a decimal number representation of a
+ * webcash value.
+ * @return wc_error_t WC_SUCCESS if the string was successfully parsed, or an
+ * error code otherwise.
  */
-wc_error_t wc_from_bstring(wc_amount_t *amt, bstring str);
+wc_error_t wc_from_bstring(wc_amount_t *amt, int *mutated, bstring str);
 
 #ifdef __cplusplus
 }

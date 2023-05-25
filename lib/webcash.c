@@ -14,17 +14,19 @@ wc_amount_t wc_zero(void) {
         return WC_ZERO;
 }
 
-wc_error_t wc_from_cstring(wc_amount_t *amt, const char *str) {
+wc_error_t wc_from_cstring(wc_amount_t *amt, int *noncanonical, const char *str) {
         struct tagbstring tstr = {0};
         btfromcstr(tstr, str);
-        return wc_from_bstring(amt, &tstr);
+        return wc_from_bstring(amt, noncanonical, &tstr);
 }
 
-wc_error_t wc_from_bstring(wc_amount_t *amt, bstring str) {
+wc_error_t wc_from_bstring(wc_amount_t *amt, int *noncanonical, bstring str) {
         const unsigned char* pos = NULL;
         const unsigned char* end = NULL;
         uint64_t u64 = UINT64_C(0);
+        int is_noncanonical = 0;
         int is_negative = 0;
+        int is_fractional = 0;
         int j = 0;
 
         /* Sanity: must provide output parameter. */
@@ -70,7 +72,7 @@ wc_error_t wc_from_bstring(wc_amount_t *amt, bstring str) {
                 return WC_ERROR_INVALID_ARGUMENT;
         }
         if (pos[0] == '0' && (pos + 1) != end && pos[1] != '.') {
-                return WC_ERROR_INVALID_ARGUMENT;
+                is_noncanonical = 1;
         }
 
         /* Parse the integral part. */
@@ -97,13 +99,20 @@ wc_error_t wc_from_bstring(wc_amount_t *amt, bstring str) {
                 /* If there is a decimal point, there must be at least one
                  * digit that follows. */
                 if (pos == end) {
-                        return WC_ERROR_INVALID_ARGUMENT;
+                        is_noncanonical = 1;
+                }
+                /* Tailing fractional zero digits are non-canonical. */
+                if (end[-1] == '0') {
+                        is_noncanonical = 1;
                 }
                 /* Read up to eight digits. */
                 for (; j < 8 && pos != end; ++j, ++pos) {
                         /* Must be a decimal digit. */
                         if (!isdigit(*pos)) {
                                 return WC_ERROR_INVALID_ARGUMENT;
+                        }
+                        if (*pos != '0') {
+                                is_fractional = 1;
                         }
                         /* Overflow checked arithmetic. */
                         if (u64 > (UINT64_MAX / 10)) {
@@ -115,9 +124,18 @@ wc_error_t wc_from_bstring(wc_amount_t *amt, bstring str) {
                         }
                         u64 += (*pos - '0');
                 }
-                /* We must now be at the end of the input. */
-                if (pos != end) {
-                        return WC_ERROR_INVALID_ARGUMENT;
+                /* We ought to now be at the end of the input.  There could be
+                 * some trailing zeros in a non-canonical input, however. */
+                for (; pos != end; ++pos) {
+                        if (*pos != '0') {
+                                return WC_ERROR_INVALID_ARGUMENT;
+                        }
+                        is_noncanonical = 1;
+                }
+                /* If there was only '0' digits in the fractional part, this
+                 * is a non-canonical representation. */
+                if (!is_fractional) {
+                        is_noncanonical = 1;
                 }
         }
 
@@ -138,7 +156,15 @@ wc_error_t wc_from_bstring(wc_amount_t *amt, bstring str) {
                 return WC_ERROR_OVERFLOW;
         }
 
+        /* Check for negative zero. */
+        if (!u64 && is_negative) {
+                is_noncanonical = 1;
+        }
+
         /* Return the result. */
+        if (noncanonical) {
+                *noncanonical = !!is_noncanonical;
+        }
         *amt = is_negative ? -u64 : u64;
         return WC_SUCCESS;
 }
