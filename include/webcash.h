@@ -17,10 +17,12 @@ extern "C" {
 /**
  * @brief A webcash library error code.
  */
-typedef int wc_error_t;
-#define WC_SUCCESS ((wc_error_t)0)
-#define WC_ERROR_INVALID_ARGUMENT ((wc_error_t)-1)
-#define WC_ERROR_OVERFLOW ((wc_error_t)-2)
+typedef enum wc_error {
+        WC_SUCCESS = 0,                 /**< Success */
+        WC_ERROR_OUT_OF_MEMORY = -1,    /**< Out of memory */
+        WC_ERROR_INVALID_ARGUMENT = -2, /**< Invalid argument */
+        WC_ERROR_OVERFLOW = -3          /**< Overflow */
+} wc_error_t;
 
 /**
  * @brief A webcash value / amount.
