@@ -80,6 +80,113 @@ TEST(gtest, wc_from_string) {
         test_cstring("1.000000000", WC_SUCCESS, 100000000, true);
 }
 
+TEST(gtest, wc_secret_new) {
+        wc_secret_t secret = {0};
+        EXPECT_EQ(wc_secret_is_valid(&secret), WC_ERROR_INVALID_ARGUMENT);
+        ASSERT_EQ(wc_secret_new(&secret), WC_SUCCESS);
+        EXPECT_EQ(secret.amount, WC_ZERO);
+        EXPECT_TRUE(biseqcstr(secret.serial, ""));
+        secret.amount = INT64_C(1);
+        EXPECT_EQ(secret.amount, INT64_C(1));
+        EXPECT_EQ(wc_secret_destroy(&secret), WC_SUCCESS);
+        EXPECT_EQ(secret.amount, WC_ZERO);
+        EXPECT_EQ(secret.serial, nullptr);
+}
+
+TEST(gtest, wc_secret_from_cstring) {
+        wc_secret_t secret = {0};
+        EXPECT_EQ(wc_secret_is_valid(&secret), WC_ERROR_INVALID_ARGUMENT);
+        ASSERT_EQ(wc_secret_from_cstring(&secret, INT64_C(1), "abc"), WC_SUCCESS);
+        EXPECT_EQ(secret.amount, INT64_C(1));
+        ASSERT_NE(secret.serial, nullptr);
+        EXPECT_TRUE(biseqcstr(secret.serial, "abc"));
+        EXPECT_EQ(wc_secret_destroy(&secret), WC_SUCCESS);
+        EXPECT_EQ(secret.amount, WC_ZERO);
+        EXPECT_EQ(secret.serial, nullptr);
+}
+
+TEST(gtest, wc_secret_from_bstring) {
+        wc_secret_t secret = {0};
+        bstring bstr = nullptr;
+        unsigned char *cstr = nullptr;
+        bstr = bfromcstr("abc");
+        ASSERT_NE(bstr, nullptr);
+        cstr = bstr->data;
+        EXPECT_EQ(wc_secret_is_valid(&secret), WC_ERROR_INVALID_ARGUMENT);
+        ASSERT_EQ(wc_secret_from_bstring(&secret, INT64_C(1), &bstr), WC_SUCCESS);
+        EXPECT_EQ(bstr, nullptr);
+        EXPECT_EQ(secret.amount, INT64_C(1));
+        EXPECT_TRUE(biseqcstr(secret.serial, "abc"));
+        EXPECT_EQ(secret.serial->data, cstr);
+        EXPECT_EQ(wc_secret_destroy(&secret), WC_SUCCESS);
+        EXPECT_EQ(secret.amount, WC_ZERO);
+        EXPECT_EQ(secret.serial, nullptr);
+}
+
+TEST(gtest, wc_secret_from_bstring_copy) {
+        wc_secret_t secret = {0};
+        bstring bstr = nullptr;
+        bstr = bfromcstr("abc");
+        ASSERT_NE(bstr, nullptr);
+        EXPECT_EQ(wc_secret_is_valid(&secret), WC_ERROR_INVALID_ARGUMENT);
+        ASSERT_EQ(wc_secret_from_bstring_copy(&secret, INT64_C(1), bstr), WC_SUCCESS);
+        EXPECT_EQ(secret.amount, INT64_C(1));
+        EXPECT_TRUE(biseqcstr(secret.serial, "abc"));
+        EXPECT_NE(secret.serial, bstr); /* comparing pointers */
+        EXPECT_NE(secret.serial->data, bstr->data);
+        EXPECT_EQ(wc_secret_destroy(&secret), WC_SUCCESS);
+        EXPECT_EQ(secret.amount, WC_ZERO);
+        EXPECT_EQ(secret.serial, nullptr);
+        EXPECT_TRUE(biseqcstr(bstr, "abc"));
+        EXPECT_EQ(bdestroy(bstr), BSTR_OK);
+}
+
+TEST(gtest, wc_secret_is_valid) {
+        wc_secret_t secret = {0};
+        /* Must pass in a secret value. */
+        EXPECT_EQ(wc_secret_is_valid(nullptr), WC_ERROR_INVALID_ARGUMENT);
+        /* Zero-initialized secret has both .amount and .serial invalid. */
+        EXPECT_EQ(wc_secret_is_valid(&secret), WC_ERROR_INVALID_ARGUMENT);
+        /* Secret with valid .amount and invalid .serial is invalid. */
+        secret.amount = INT64_C(1);
+        EXPECT_EQ(wc_secret_is_valid(&secret), WC_ERROR_INVALID_ARGUMENT);
+        /* Secret with invalid .amount and valid .serial is invalid. */
+        secret.amount = WC_ZERO;
+        secret.serial = bfromcstr("abc");
+        ASSERT_NE(secret.serial, nullptr);
+        EXPECT_TRUE(biseqcstr(secret.serial, "abc"));
+        EXPECT_EQ(wc_secret_is_valid(&secret), WC_ERROR_INVALID_ARGUMENT);
+        /* Secret with valid .amount and valid .serial is valid. */
+        secret.amount = INT64_C(1);
+        EXPECT_EQ(wc_secret_is_valid(&secret), WC_SUCCESS);
+        /* Secret with a NUL character in .serial is invalid. */
+        secret.serial->data[1] = '\0';
+        EXPECT_EQ(wc_secret_is_valid(&secret), WC_ERROR_INVALID_ARGUMENT);
+        /* Cleanup works on invalid secrets. */
+        EXPECT_EQ(wc_secret_destroy(&secret), WC_SUCCESS);
+        EXPECT_EQ(secret.amount, WC_ZERO);
+        EXPECT_EQ(secret.serial, nullptr);
+}
+
+TEST(gtest, wc_secret_destroy) {
+        wc_secret_t secret = {0};
+        EXPECT_EQ(wc_secret_destroy(&secret), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(secret.serial, nullptr);
+        EXPECT_EQ(wc_secret_new(&secret), WC_SUCCESS);
+        EXPECT_EQ(secret.amount, WC_ZERO);
+        EXPECT_NE(secret.serial, nullptr);
+        if (secret.serial) {
+                EXPECT_TRUE(secret.serial->mlen > 0);
+                EXPECT_EQ(secret.serial->slen, 0);
+                EXPECT_NE(secret.serial->data, nullptr);
+                EXPECT_TRUE(biseqcstr(secret.serial, ""));
+        }
+        EXPECT_EQ(wc_secret_destroy(&secret), WC_SUCCESS);
+        EXPECT_EQ(secret.serial, nullptr);
+        EXPECT_EQ(wc_secret_destroy(&secret), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(secret.serial, nullptr);
+}
+
 int main(int argc, char **argv) {
         ::testing::InitGoogleTest(&argc, argv);
         return RUN_ALL_TESTS();

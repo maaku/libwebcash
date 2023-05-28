@@ -198,5 +198,112 @@ bstring wc_to_bstring(wc_amount_t amount) {
         return str;
 }
 
+/* The amount of memory to allocate for wc_secret_t.secret when default
+ * initialized.  A webcash secret is traditionally an hex-encoded 32-bit
+ * random or pseudorandom value, so we will allocate enough memory to store
+ * that. */
+#define WC_SECRET_DEFAULT_ALLOC_SIZE 64
+
+wc_error_t wc_secret_new(wc_secret_t *secret) {
+        bstring serial = NULL;
+        if (!secret) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        serial = bfromcstralloc(WC_SECRET_DEFAULT_ALLOC_SIZE, "");
+        if (serial == NULL) {
+                return WC_ERROR_OUT_OF_MEMORY;
+        }
+        wc_secret_destroy(secret); /* avoid leaking memory */
+        secret->amount = WC_ZERO;
+        secret->serial = serial;
+        return WC_SUCCESS;
+}
+
+wc_error_t wc_secret_from_cstring(wc_secret_t *secret, wc_amount_t amount, const char *serial) {
+        bstring bstr = NULL;
+        if (!secret) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (serial == NULL) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        bstr = bfromcstr(serial);
+        if (bstr == NULL) {
+                return WC_ERROR_OUT_OF_MEMORY;
+        }
+        wc_secret_destroy(secret); /* avoid leaking memory */
+        secret->amount = amount;
+        secret->serial = bstr;
+        return WC_SUCCESS;
+}
+
+wc_error_t wc_secret_from_bstring(wc_secret_t *secret, wc_amount_t amount, bstring *serial) {
+        if (!secret) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (serial == NULL || *serial == NULL || (*serial)->slen < 0 || (*serial)->data == NULL) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        wc_secret_destroy(secret); /* avoid leaking memory */
+        secret->amount = amount;
+        secret->serial = *serial;
+        *serial = NULL;
+        return WC_SUCCESS;
+}
+
+wc_error_t wc_secret_from_bstring_copy(wc_secret_t *secret, wc_amount_t amount, bstring serial) {
+        bstring bstr = NULL;
+        if (!secret) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (serial == NULL || serial->slen < 0 || serial->data == NULL) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        bstr = bstrcpy(serial);
+        if (bstr == NULL) {
+                return WC_ERROR_OUT_OF_MEMORY;
+        }
+        wc_secret_destroy(secret); /* avoid leaking memory */
+        secret->amount = amount;
+        secret->serial = bstr;
+        return WC_SUCCESS;
+}
+
+wc_error_t wc_secret_is_valid(const wc_secret_t *secret) {
+        int i = 0;
+        if (!secret) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        /* Zero valued or negative webcash are not allowed. */
+        if (secret->amount < (wc_amount_t)1) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        /* The secret itself must be a valid string. */
+        if (!secret->serial || secret->serial->slen < 0 || secret->serial->data == NULL) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        /* The secret must be a utf8-encoded unicode string with no NUL characters. */
+        /* FIXME: Should check that it is actually utf8 unicode? */
+        /* FIXME: Should there be a maximum length for the serial? */
+        for (; i < secret->serial->slen; ++i) {
+                if (secret->serial->data[i] == '\0') {
+                        return WC_ERROR_INVALID_ARGUMENT;
+                }
+        }
+        return WC_SUCCESS;
+}
+
+wc_error_t wc_secret_destroy(wc_secret_t *wc) {
+        if (!wc) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (bdestroy(wc->serial) != BSTR_OK) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        wc->amount = WC_ZERO;
+        wc->serial = NULL;
+        return WC_SUCCESS;
+}
+
 /* End of File
  */

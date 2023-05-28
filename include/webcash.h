@@ -109,6 +109,30 @@ wc_error_t wc_from_bstring(wc_amount_t *amt, int *mutated, bstring str);
  */
 bstring wc_to_bstring(wc_amount_t amount);
 
+/**
+ * @brief A webcash secret and the amount it protects.
+ *
+ * @amount: The amount of webcash protected by the secret.
+ * @serial: The secret itself, as a bstring.
+ *
+ * A webcash secret is a unicode string which is used to protect a webcash
+ * amount.  The server stores only the hash of this value in its database, and
+ * requires anyone using the webcash to present the hash preimage (the secret)
+ * as authorization.  The secret is a unicode string, and may contain any
+ * unicode characters except for the null character.
+ */
+typedef struct wc_secret {
+        wc_amount_t amount;
+        bstring serial;
+} wc_secret_t;
+
+wc_error_t wc_secret_new(wc_secret_t *secret);
+wc_error_t wc_secret_from_cstring(wc_secret_t *secret, wc_amount_t amount, const char *serial);
+wc_error_t wc_secret_from_bstring(wc_secret_t *secret, wc_amount_t amount, bstring *serial);
+wc_error_t wc_secret_from_bstring_copy(wc_secret_t *secret, wc_amount_t amount, bstring serial);
+wc_error_t wc_secret_is_valid(const wc_secret_t *secret);
+wc_error_t wc_secret_destroy(wc_secret_t *wc);
+
 #ifdef __cplusplus
 }
 #endif
