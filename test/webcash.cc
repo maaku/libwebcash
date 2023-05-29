@@ -78,6 +78,7 @@ TEST(gtest, wc_from_string) {
         test_cstring("1", WC_SUCCESS, 100000000);
         test_cstring("1.", WC_SUCCESS, 100000000, true);
         test_cstring("1.000000000", WC_SUCCESS, 100000000, true);
+        test_cstring("\"1.0\"", WC_ERROR_INVALID_ARGUMENT);
 }
 
 TEST(gtest, wc_secret_new) {

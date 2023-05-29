@@ -46,16 +46,6 @@ wc_error_t wc_from_bstring(wc_amount_t *amt, int *noncanonical, bstring str) {
         pos = &str->data[0];
         end = &str->data[str->slen];
 
-        /* Remove any surrounding quotation marks, if any.  This is purely for
-         * compatibility reasons with other webcash APIs. */
-        while (*pos == '"' && *(end - 1) == '"') {
-                ++pos; --end;
-                /* An empty set of quotes is not a valid encoding. */
-                if (pos >= end) {
-                        return WC_ERROR_INVALID_ARGUMENT;
-                }
-        }
-
         is_negative = (*pos == '-');
         if (is_negative) {
                 ++pos;
