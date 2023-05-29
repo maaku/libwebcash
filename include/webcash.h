@@ -138,21 +138,133 @@ typedef struct wc_secret {
         bstring serial;
 } wc_secret_t;
 
+/**
+ * @brief Initialize a wc_secret_t.
+ *
+ * This function initializes a wc_secret_t to a zero amount and an empty
+ * serial string with sufficient allocation to hold a typical webcash secret.
+ *
+ * @param secret The wc_secret_t structure to initialize.
+ * @return wc_error_t WC_SUCCESS or WC_ERROR_OUT_OF_MEMORY.
+ */
 wc_error_t wc_secret_new(wc_secret_t *secret);
+
+/**
+ * @brief Initialize a wc_secret_t with a given amount and serial.
+ *
+ * This function initializes a wc_secret_t to the given amount and serial,
+ * specified as a C string.  Can fail if the bstring allocation fails, due to
+ * lack of memory.
+ *
+ * @param secret The wc_secret_t structure to initialize.
+ * @param amount The amount of webcash protected by the secret.
+ * @param serial The webcash secret / serial itself, as a C string.
+ * @return wc_error_t WC_SUCCESS, WC_ERROR_INVALID_ARGUMENT, or
+ * WC_ERROR_OUT_OF_MEMORY.
+ */
 wc_error_t wc_secret_from_cstring(wc_secret_t *secret, wc_amount_t amount, const char *serial);
+
+/**
+ * @brief Initialize a wc_secret_t with a given amount and serial.
+ *
+ * This function initializes a wc_secret_t to the given amount and serial,
+ * specified as a bstring.  The wc_secret_t takes ownership of the bstring,
+ * and the caller's copy of the bstring point is set to NULL.
+ *
+ * Since the wc_secret_t takes ownership of the bstring, no allocation is
+ * performed and this function will always return WC_SUCCESS if its arguments
+ * are valid.
+ *
+ * @param secret The wc_secret_t structure to initialize.
+ * @param amount The amount of webcash protected by the secret.
+ * @param serial The webcash secret / serial itself, as a bstring.
+ * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
+ */
 wc_error_t wc_secret_from_bstring(wc_secret_t *secret, wc_amount_t amount, bstring *serial);
+
+/**
+ * @brief Initialize a wc_secret_t with a given amount and serial.
+ *
+ * This function initializes a wc_secret_t to the given amount and serial,
+ * specified as a bstring.  The wc_secret_t makes a copy of the bstring, and
+ * the caller's copy of the bstring is not modified.  Can fail if the bstring
+ * clone operation fails, due to lack of memory.
+ *
+ * @param secret The wc_secret_t structure to initialize.
+ * @param amount The amount of webcash protected by the secret.
+ * @param serial The webcash secret / serial itself, as a bstring.
+ * @return wc_error_t WC_SUCCESS, WC_ERROR_INVALID_ARGUMENT, or
+ * WC_ERROR_OUT_OF_MEMORY.
+ */
 wc_error_t wc_secret_from_bstring_copy(wc_secret_t *secret, wc_amount_t amount, bstring serial);
+
+/**
+ * @brief Check whether a wc_secret_t is valid.
+ *
+ * This function checks whether a wc_secret_t is valid.  A wc_secret_t is
+ * valid if its amount is a positive value and its serial is nonempty.
+ *
+ * @param secret The wc_secret_t to check.
+ * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
+ */
 wc_error_t wc_secret_is_valid(const wc_secret_t *secret);
+
+/**
+ * @brief Destroy a wc_secret_t.
+ *
+ * This function destroys a wc_secret_t, freeing any memory it allocated.
+ * After this function returns, the wc_secret_t is no longer valid and must be
+ * reinitialized before being used again.
+ *
+ * @param wc The wc_secret_t to destroy.
+ * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
+ */
 wc_error_t wc_secret_destroy(wc_secret_t *wc);
 
+/**
+ * @brief A webcash public hash and the amount allocated to it.
+ *
+ * @amount: The amount of webcash allocated to the hash value.
+ * @hash: The hash of the webcash secret / serial.
+ *
+ * A webcash public hash is a 256-bit hash of a webcash secret.  The server
+ * stores only this hash in its database, and requires anyone using the
+ * webcash to present the hash preimage (the secret) as authorization.  The
+ * server can also look up how much webcash is allocated to the hash value and
+ * report that to the user.
+ */
 typedef struct wc_public {
         wc_amount_t amount;
         struct sha256 hash;
 } wc_public_t;
 
+/**
+ * @brief Initialize a wc_public_t.
+ *
+ * This macro expans to an initializer list statement to assign a zero amount
+ * and a zero hash to a wc_public_t structure.  It is equivalent to zeroing
+ * out the structure.
+ */
 #define WC_PUBLIC_INIT { WC_ZERO, {0} }
 
+/**
+ * @brief Initialize a wc_public_t from a wc_secret_t, copying over the same
+ * amount and hashing the serial to get the public hash value.
+ *
+ * @param secret The wc_secret_t to initialize the wc_public_t from.
+ * @return wc_public_t The initialized wc_public_t.
+ */
 wc_public_t wc_public_from_secret(const wc_secret_t* secret);
+
+/**
+ * @brief Check whether a wc_public_t is valid.
+ *
+ * This function checks whether a wc_public_t is valid.  A wc_public_t is
+ * valid if its amount is a positive value.
+ *
+ * @param pub The wc_public_t to check.
+ * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
+ */
 wc_error_t wc_public_is_valid(const wc_public_t *pub);
 
 #ifdef __cplusplus
