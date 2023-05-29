@@ -303,6 +303,33 @@ wc_error_t wc_secret_destroy(wc_secret_t *secret) {
         return WC_SUCCESS;
 }
 
+wc_error_t wc_secret_to_string(bstring *bstr, const wc_secret_t *secret) {
+        bstring amt = NULL;
+        if (!bstr) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (!secret) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (secret->serial == NULL || secret->serial->slen < 0 || secret->serial->data == NULL) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        amt = wc_to_bstring(secret->amount);
+        if (amt == NULL) {
+                return WC_ERROR_OUT_OF_MEMORY;
+        }
+        if (*bstr) {
+                /* prevent memory leaks */
+                bdestroy(*bstr);
+        }
+        *bstr = bformat("e%s:secret:%s", amt->data, secret->serial->data);
+        bdestroy(amt); /* cleanup */
+        if (*bstr == NULL) {
+                return WC_ERROR_OUT_OF_MEMORY;
+        }
+        return WC_SUCCESS;
+}
+
 wc_public_t wc_public_from_secret(const wc_secret_t *secret) {
         wc_public_t pub = {0};
         struct sha256_ctx ctx = SHA256_INIT;

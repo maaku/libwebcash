@@ -222,6 +222,22 @@ wc_error_t wc_secret_is_valid(const wc_secret_t *secret);
 wc_error_t wc_secret_destroy(wc_secret_t *secret);
 
 /**
+ * @brief Convert a wc_secret_t to a string.
+ *
+ * This function converts a wc_secret_t to a bstring containing the standard
+ * webcash claim code representation of the secret, of the format
+ * "e{amount}:secret:{serial}".  The bstring is allocated by this function,
+ * and the caller is responsible for freeing it.
+ *
+ * @param bstr An output argument to be filled with a freshly allocated
+ * bstring containing the claim code.
+ * @param secret The wc_secret_t to serialize.
+ * @return wc_error_t WC_SUCCESS, WC_ERROR_INVALID_ARGUMENT, or
+ * WC_ERROR_OUT_OF_MEMORY.
+ */
+wc_error_t wc_secret_to_string(bstring *bstr, const wc_secret_t *secret);
+
+/**
  * @brief A webcash public hash and the amount allocated to it.
  *
  * @amount: The amount of webcash allocated to the hash value.

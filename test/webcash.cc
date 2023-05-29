@@ -188,6 +188,23 @@ TEST(gtest, wc_secret_destroy) {
         EXPECT_EQ(secret.serial, nullptr);
 }
 
+TEST(gtest, wc_secret_string) {
+        wc_secret_t secret = {0};
+        bstring bstr = nullptr;
+        ASSERT_EQ(wc_secret_from_cstring(nullptr, INT64_C(1234567800), "abc"), WC_ERROR_INVALID_ARGUMENT);
+        ASSERT_EQ(wc_secret_from_cstring(&secret, INT64_C(1234567800), "abc"), WC_SUCCESS);
+        EXPECT_EQ(secret.amount, INT64_C(1234567800));
+        ASSERT_NE(secret.serial, nullptr);
+        EXPECT_TRUE(biseqcstr(secret.serial, "abc"));
+        EXPECT_EQ(wc_secret_to_string(&bstr, &secret), WC_SUCCESS);
+        EXPECT_NE(bstr, nullptr);
+        EXPECT_TRUE(biseqcstr(bstr, "e12.345678:secret:abc"));
+        EXPECT_EQ(wc_secret_destroy(&secret), WC_SUCCESS);
+        EXPECT_EQ(secret.amount, WC_ZERO);
+        EXPECT_EQ(secret.serial, nullptr);
+        EXPECT_EQ(bdestroy(bstr), BSTR_OK);
+}
+
 TEST(gtest, wc_public_init) {
         wc_public_t pub = WC_PUBLIC_INIT;
         struct sha256 hash = {0};
