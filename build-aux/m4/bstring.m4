@@ -15,7 +15,7 @@ AC_DEFUN([AX_CHECK_BSTRING], [
     fi
 
     if test "x$with_included_bstring" = "xyes"; then
-        BSTRING_LDFLAGS='$(top_builddir)/depends/bstring/bstring/libbstring.la'
+        BSTRING_LDFLAGS='$(top_builddir)/depends/bstring/bstring/.libs/libbstring.a'
         BSTRING_CPPFLAGS='-I$(top_srcdir)/depends/bstring/bstring'
     else
         BSTRING_LDFLAGS='-lbstring'

@@ -15,7 +15,7 @@ AC_DEFUN([AX_CHECK_SHA2], [
     fi
 
     if test "x$with_included_sha2" = "xyes"; then
-        SHA2_LDFLAGS='$(top_builddir)/depends/libsha2/lib/.libs/libsha2.la'
+        SHA2_LDFLAGS='$(top_builddir)/depends/libsha2/lib/.libs/libsha2.a'
         SHA2_CPPFLAGS='-I$(top_srcdir)/depends/libsha2/include'
     else
         SHA2_LDFLAGS='-lsha2'
