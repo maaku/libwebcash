@@ -35,7 +35,7 @@ static void test_cstring(
                 EXPECT_EQ(amt2, amt);
                 EXPECT_EQ(noncanonical2, !!noncanonical);
                 bstr = wc_to_bstring(amt);
-                EXPECT_TRUE(bstr != NULL);
+                EXPECT_NE(bstr, nullptr);
                 if (bstr) {
                         EXPECT_EQ(bstr->slen == strlen(str) && !memcmp(bstr->data, str, bstr->slen), !noncanonical);
                         bdestroy(bstr); bstr = NULL;
@@ -177,7 +177,7 @@ TEST(gtest, wc_secret_destroy) {
         EXPECT_EQ(secret.amount, WC_ZERO);
         EXPECT_NE(secret.serial, nullptr);
         if (secret.serial) {
-                EXPECT_TRUE(secret.serial->mlen > 0);
+                EXPECT_GT(secret.serial->mlen, 0);
                 EXPECT_EQ(secret.serial->slen, 0);
                 EXPECT_NE(secret.serial->data, nullptr);
                 EXPECT_TRUE(biseqcstr(secret.serial, ""));
