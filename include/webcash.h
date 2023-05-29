@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 #include <bstrlib.h>
+#include <sha2/sha256.h>
 
 /**
  * @brief A webcash library error code.
@@ -23,6 +24,17 @@ typedef enum wc_error {
         WC_ERROR_INVALID_ARGUMENT = -2, /**< Invalid argument */
         WC_ERROR_OVERFLOW = -3          /**< Overflow */
 } wc_error_t;
+
+/**
+ * @brief Initialize libwebcash.
+ *
+ * This function initializes the libwebcash library.  It must be called before
+ * any other libwebcash functions are called.  It is safe to call this function
+ * multiple times.
+ *
+ * @return wc_error_t WC_SUCCESS.
+ */
+wc_error_t wc_init(void);
 
 /**
  * @brief A webcash value / amount.

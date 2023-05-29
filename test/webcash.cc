@@ -190,6 +190,7 @@ TEST(gtest, wc_secret_destroy) {
 
 int main(int argc, char **argv) {
         ::testing::InitGoogleTest(&argc, argv);
+        assert(wc_init() == WC_SUCCESS);
         return RUN_ALL_TESTS();
 }
 

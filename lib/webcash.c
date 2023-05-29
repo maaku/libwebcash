@@ -7,9 +7,17 @@
 
 #include "webcash.h"
 
+#include <sha2/sha256.h>
+
 #include <ctype.h>
 #include <inttypes.h>
 #include <stdint.h>
+
+wc_error_t wc_init(void) {
+        /* Setup libsha2 */
+        sha256_auto_detect();
+        return WC_SUCCESS;
+}
 
 wc_amount_t wc_zero(void) {
         return WC_ZERO;
