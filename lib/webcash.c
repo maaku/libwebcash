@@ -330,6 +330,55 @@ wc_error_t wc_secret_to_string(bstring *bstr, const wc_secret_t *secret) {
         return WC_SUCCESS;
 }
 
+wc_error_t wc_secret_parse(wc_secret_t *secret, int *noncanonical, bstring bstr) {
+        struct tagbstring sep = bsStatic(":");
+        int pos[3] = {0}; /* { amount, "secret", serial } */
+        int is_noncanonical = 0;
+        wc_error_t err = WC_SUCCESS;
+        wc_secret_t ret = {0};
+        /* Argument validation. */
+        if (!secret) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (bstr == NULL || bstr->slen <= 0 || bstr->data == NULL) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        /* Split the string into amount, "secret", and serial fields. */
+        pos[0] = bstr->data[0] == 'e' ? 1 : 0; /* skip 'e' if present */
+        pos[1] = binchr(bstr, pos[0], &sep);
+        if (pos[1] == BSTR_ERR) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        pos[2] = binchr(bstr, pos[1] + 1, &sep);
+        if (pos[2] == BSTR_ERR) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        /* Check that the middle field is the ASCII text "secret". */
+        btfromblk(sep, &bstr->data[pos[1] + 1], pos[2] - pos[1] - 1);
+        if (biseqcstr(&sep, "secret") != 1) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        /* Parse the amount and serial fields. */
+        btfromblk(sep, &bstr->data[pos[0]], pos[1] - pos[0]);
+        err = wc_from_bstring(&ret.amount, &is_noncanonical, &sep);
+        if (err != WC_SUCCESS) {
+                return err;
+        }
+        /* Canonical form includes the 'e'. */
+        is_noncanonical = is_noncanonical || pos[0] == 0;
+        ret.serial = bmidstr(bstr, pos[2] + 1, bstr->slen - pos[2] - 1);
+        if (ret.serial == NULL) {
+                return WC_ERROR_OUT_OF_MEMORY;
+        }
+        /* Write to output parameters. */
+        wc_secret_destroy(secret); /* avoid leaking memory */
+        *secret = ret;
+        if (noncanonical) {
+                *noncanonical = is_noncanonical;
+        }
+        return WC_SUCCESS;
+}
+
 wc_public_t wc_public_from_secret(const wc_secret_t *secret) {
         wc_public_t pub = {0};
         struct sha256_ctx ctx = SHA256_INIT;

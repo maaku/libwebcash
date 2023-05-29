@@ -238,6 +238,23 @@ wc_error_t wc_secret_destroy(wc_secret_t *secret);
 wc_error_t wc_secret_to_string(bstring *bstr, const wc_secret_t *secret);
 
 /**
+ * @brief Parse a wc_secret_t from a string.
+ *
+ * This function parses a wc_secret_t from a bstring containing a webcash
+ * claim code of the standard format "e{amount}:secret:{serial}".  The serial
+ * of the webcash secret is newly allocated, and the caller is responsible for
+ * freeing both secret and the passed-in bstring.
+ *
+ * @param secret An output argument to be filled with the parsed wc_secret_t.
+ * @param noncanonical An output argument to be filled with a boolean
+ * indicating whether the claim code deviated from canonical format.
+ * @param bstr The bstring containing the claim code to parse.
+ * @return wc_error_t WC_SUCCESS, WC_ERROR_INVALID_ARGUMENT, or
+ * WC_ERROR_OUT_OF_MEMORY.
+ */
+wc_error_t wc_secret_parse(wc_secret_t *secret, int *noncanonical, bstring bstr);
+
+/**
  * @brief A webcash public hash and the amount allocated to it.
  *
  * @amount: The amount of webcash allocated to the hash value.
