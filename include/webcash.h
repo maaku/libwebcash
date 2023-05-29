@@ -145,6 +145,16 @@ wc_error_t wc_secret_from_bstring_copy(wc_secret_t *secret, wc_amount_t amount, 
 wc_error_t wc_secret_is_valid(const wc_secret_t *secret);
 wc_error_t wc_secret_destroy(wc_secret_t *wc);
 
+typedef struct wc_public {
+        wc_amount_t amount;
+        struct sha256 hash;
+} wc_public_t;
+
+#define WC_PUBLIC_INIT { WC_ZERO, {0} }
+
+wc_public_t wc_public_from_secret(const wc_secret_t* secret);
+wc_error_t wc_public_is_valid(const wc_public_t *pub);
+
 #ifdef __cplusplus
 }
 #endif

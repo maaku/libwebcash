@@ -188,6 +188,39 @@ TEST(gtest, wc_secret_destroy) {
         EXPECT_EQ(secret.serial, nullptr);
 }
 
+TEST(gtest, wc_public_init) {
+        wc_public_t pub = WC_PUBLIC_INIT;
+        struct sha256 hash = {0};
+        EXPECT_EQ(pub.amount, WC_ZERO);
+        EXPECT_EQ(memcmp(&pub.hash.u8, &hash.u8, sizeof(hash.u8)), 0);
+}
+
+TEST(gtest, wc_public_from_secret) {
+        wc_secret_t secret = {0};
+        wc_public_t pub = WC_PUBLIC_INIT;
+        struct sha256 hash = { /* sha256(b"abc").digest() */
+                0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea,
+                0x41, 0x41, 0x40, 0xde, 0x5d, 0xae, 0x22, 0x23,
+                0xb0, 0x03, 0x61, 0xa3, 0x96, 0x17, 0x7a, 0x9c,
+                0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad
+        };
+        EXPECT_EQ(wc_secret_from_cstring(&secret, INT64_C(1), "abc"), WC_SUCCESS);
+        EXPECT_EQ(wc_secret_is_valid(&secret), WC_SUCCESS);
+        pub = wc_public_from_secret(&secret);
+        EXPECT_EQ(pub.amount, INT64_C(1));
+        EXPECT_EQ(memcmp(&pub.hash.u8, &hash.u8, sizeof(hash.u8)), 0);
+        /* Cleanup */
+        EXPECT_EQ(wc_secret_destroy(&secret), WC_SUCCESS);
+}
+
+TEST(gtest, wc_public_is_valid) {
+        wc_public_t pub = WC_PUBLIC_INIT;
+        EXPECT_EQ(wc_public_is_valid(nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wc_public_is_valid(&pub), WC_ERROR_INVALID_ARGUMENT);
+        pub.amount = INT64_C(1);
+        EXPECT_EQ(wc_public_is_valid(&pub), WC_SUCCESS);
+}
+
 int main(int argc, char **argv) {
         ::testing::InitGoogleTest(&argc, argv);
         assert(wc_init() == WC_SUCCESS);

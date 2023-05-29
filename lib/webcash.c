@@ -303,5 +303,30 @@ wc_error_t wc_secret_destroy(wc_secret_t *wc) {
         return WC_SUCCESS;
 }
 
+wc_public_t wc_public_from_secret(const wc_secret_t* secret) {
+        wc_public_t pub = {0};
+        struct sha256_ctx ctx = SHA256_INIT;
+        if (!secret) {
+                return pub;
+        }
+        if (secret->serial == NULL || secret->serial->slen < 0 || secret->serial->data == NULL) {
+                return pub;
+        }
+        sha256_update(&ctx, secret->serial->data, secret->serial->slen);
+        sha256_done(&pub.hash, &ctx);
+        pub.amount = secret->amount;
+        return pub;
+}
+
+wc_error_t wc_public_is_valid(const wc_public_t *pub) {
+        if (!pub) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (pub->amount < (wc_amount_t)1) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        return WC_SUCCESS;
+}
+
 /* End of File
  */
