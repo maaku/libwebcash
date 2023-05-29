@@ -162,7 +162,7 @@ wc_error_t wc_from_bstring(wc_amount_t *amt, int *noncanonical, bstring str) {
 
         /* Return the result. */
         if (noncanonical) {
-                *noncanonical = !!is_noncanonical;
+                *noncanonical = is_noncanonical;
         }
         *amt = is_negative ? -u64 : u64;
         return WC_SUCCESS;
