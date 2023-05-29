@@ -254,7 +254,7 @@ typedef struct wc_public {
  * @param secret The wc_secret_t to initialize the wc_public_t from.
  * @return wc_public_t The initialized wc_public_t.
  */
-wc_public_t wc_public_from_secret(const wc_secret_t* secret);
+wc_public_t wc_public_from_secret(const wc_secret_t *secret);
 
 /**
  * @brief Check whether a wc_public_t is valid.

@@ -303,7 +303,7 @@ wc_error_t wc_secret_destroy(wc_secret_t *secret) {
         return WC_SUCCESS;
 }
 
-wc_public_t wc_public_from_secret(const wc_secret_t* secret) {
+wc_public_t wc_public_from_secret(const wc_secret_t *secret) {
         wc_public_t pub = {0};
         struct sha256_ctx ctx = SHA256_INIT;
         if (!secret) {
