@@ -216,10 +216,10 @@ wc_error_t wc_secret_is_valid(const wc_secret_t *secret);
  * After this function returns, the wc_secret_t is no longer valid and must be
  * reinitialized before being used again.
  *
- * @param wc The wc_secret_t to destroy.
+ * @param secret The wc_secret_t to destroy.
  * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
  */
-wc_error_t wc_secret_destroy(wc_secret_t *wc);
+wc_error_t wc_secret_destroy(wc_secret_t *secret);
 
 /**
  * @brief A webcash public hash and the amount allocated to it.

@@ -291,15 +291,15 @@ wc_error_t wc_secret_is_valid(const wc_secret_t *secret) {
         return WC_SUCCESS;
 }
 
-wc_error_t wc_secret_destroy(wc_secret_t *wc) {
-        if (!wc) {
+wc_error_t wc_secret_destroy(wc_secret_t *secret) {
+        if (!secret) {
                 return WC_ERROR_INVALID_ARGUMENT;
         }
-        if (bdestroy(wc->serial) != BSTR_OK) {
+        if (bdestroy(secret->serial) != BSTR_OK) {
                 return WC_ERROR_INVALID_ARGUMENT;
         }
-        wc->amount = WC_ZERO;
-        wc->serial = NULL;
+        secret->amount = WC_ZERO;
+        secret->serial = NULL;
         return WC_SUCCESS;
 }
 
