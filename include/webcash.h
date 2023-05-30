@@ -300,6 +300,21 @@ wc_public_t wc_public_from_secret(const wc_secret_t *secret);
  */
 wc_error_t wc_public_is_valid(const wc_public_t *pub);
 
+/**
+ * @brief Encode a wc_public_t as a bstring.
+ *
+ * This function serializes the passed in wc_public_t to a heap-allocated
+ * string, stored in the passed-in bstring pointer.  The caller is assumes
+ * responsibility for freeing the bstring.
+ *
+ * @param bstr An output argument to be filled with a freshly allocated
+ * bstring containing the encoded wc_public_t.
+ * @param pub The wc_public_t to encode.
+ * @return wc_error_t WC_SUCCESS, WC_ERROR_INVALID_ARGUMENT, or
+ * WC_ERROR_OUT_OF_MEMORY.
+ */
+wc_error_t wc_public_to_string(bstring *bstr, const wc_public_t *pub);
+
 #ifdef __cplusplus
 }
 #endif

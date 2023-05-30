@@ -404,5 +404,42 @@ wc_error_t wc_public_is_valid(const wc_public_t *pub) {
         return WC_SUCCESS;
 }
 
+wc_error_t wc_public_to_string(bstring *bstr, const wc_public_t *pub) {
+        bstring amt = NULL;
+        if (!bstr) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (!pub) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        amt = wc_to_bstring(pub->amount);
+        if (amt == NULL) {
+                return WC_ERROR_OUT_OF_MEMORY;
+        }
+        if (*bstr) {
+                /* prevent memory leaks */
+                bdestroy(*bstr);
+        }
+        *bstr = bformat("e%s:public:"
+                        "%02x%02x%02x%02x%02x%02x%02x%02x"
+                        "%02x%02x%02x%02x%02x%02x%02x%02x"
+                        "%02x%02x%02x%02x%02x%02x%02x%02x"
+                        "%02x%02x%02x%02x%02x%02x%02x%02x",
+                        amt->data,
+                        pub->hash.u8[0],  pub->hash.u8[1],  pub->hash.u8[2],  pub->hash.u8[3],
+                        pub->hash.u8[4],  pub->hash.u8[5],  pub->hash.u8[6],  pub->hash.u8[7],
+                        pub->hash.u8[8],  pub->hash.u8[9],  pub->hash.u8[10], pub->hash.u8[11],
+                        pub->hash.u8[12], pub->hash.u8[13], pub->hash.u8[14], pub->hash.u8[15],
+                        pub->hash.u8[16], pub->hash.u8[17], pub->hash.u8[18], pub->hash.u8[19],
+                        pub->hash.u8[20], pub->hash.u8[21], pub->hash.u8[22], pub->hash.u8[23],
+                        pub->hash.u8[24], pub->hash.u8[25], pub->hash.u8[26], pub->hash.u8[27],
+                        pub->hash.u8[28], pub->hash.u8[29], pub->hash.u8[30], pub->hash.u8[31]);
+        bdestroy(amt); /* cleanup */
+        if (*bstr == NULL) {
+                return WC_ERROR_OUT_OF_MEMORY;
+        }
+        return WC_SUCCESS;
+}
+
 /* End of File
  */
