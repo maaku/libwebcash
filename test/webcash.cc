@@ -244,20 +244,29 @@ TEST(gtest, wc_public_is_valid) {
 }
 
 TEST(gtest, wc_public_string) {
+        const struct sha256 zero = {0};
+        const struct sha256 hash = { /* sha256(b"abc").digest() */
+                0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea,
+                0x41, 0x41, 0x40, 0xde, 0x5d, 0xae, 0x22, 0x23,
+                0xb0, 0x03, 0x61, 0xa3, 0x96, 0x17, 0x7a, 0x9c,
+                0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad
+        };
         wc_public_t pub = {
                 INT64_C(1234567800), /* 12.345678 */
-                {                    /* sha256(b"abc").digest() */
-                        0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea,
-                        0x41, 0x41, 0x40, 0xde, 0x5d, 0xae, 0x22, 0x23,
-                        0xb0, 0x03, 0x61, 0xa3, 0x96, 0x17, 0x7a, 0x9c,
-                        0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad
-                }
+                hash
         };
         bstring bstr = nullptr;
         int noncanonical = -1;
         EXPECT_EQ(wc_public_to_string(&bstr, &pub), WC_SUCCESS);
         EXPECT_NE(bstr, nullptr);
         EXPECT_EQ(biseqcstr(bstr, "e12.345678:public:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"), 1);
+        pub = WC_PUBLIC_INIT;
+        EXPECT_EQ(pub.amount, WC_ZERO);
+        EXPECT_EQ(memcmp(&pub.hash.u8, &zero.u8, sizeof(zero.u8)), 0);
+        EXPECT_EQ(wc_public_parse(&pub, &noncanonical, bstr), WC_SUCCESS);
+        EXPECT_EQ(noncanonical, 0);
+        EXPECT_EQ(pub.amount, INT64_C(1234567800));
+        EXPECT_EQ(memcmp(&pub.hash.u8, &hash.u8, sizeof(hash.u8)), 0);
 }
 
 int main(int argc, char **argv) {

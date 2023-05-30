@@ -13,6 +13,19 @@
 #include <inttypes.h>
 #include <stdint.h>
 
+static unsigned char hexdigit_to_int(char c) {
+        if (c >= '0' && c <= '9') {
+                return c - '0';
+        }
+        if (c >= 'a' && c <= 'f') {
+                return c - 'a' + 10;
+        }
+        if (c >= 'A' && c <= 'F') {
+                return c - 'A' + 10;
+        }
+        return 0xff;
+}
+
 wc_error_t wc_init(void) {
         /* Setup libsha2 */
         sha256_auto_detect();
@@ -437,6 +450,69 @@ wc_error_t wc_public_to_string(bstring *bstr, const wc_public_t *pub) {
         bdestroy(amt); /* cleanup */
         if (*bstr == NULL) {
                 return WC_ERROR_OUT_OF_MEMORY;
+        }
+        return WC_SUCCESS;
+}
+
+wc_error_t wc_public_parse(wc_public_t *pub, int *noncanonical, bstring bstr) {
+        struct tagbstring sep = bsStatic(":");
+        int pos[3] = {0}; /* { amount, "public", hash } */
+        int is_noncanonical = 0;
+        wc_error_t err = WC_SUCCESS;
+        wc_public_t ret = {0};
+        int j = 0, c = 0;
+        /* Argument validation. */
+        if (!pub) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (bstr == NULL || bstr->slen <= 0 || bstr->data == NULL) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        /* Split the string into amount, "public", and hash fields. */
+        pos[0] = bstr->data[0] == 'e' ? 1 : 0; /* skip 'e' if present */
+        pos[1] = binchr(bstr, pos[0], &sep);
+        if (pos[1] == BSTR_ERR) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        pos[2] = binchr(bstr, pos[1] + 1, &sep);
+        if (pos[2] == BSTR_ERR) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (bstr->slen - pos[2] != 1/*:*/ + 64/*hash*/) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        for (j = 0; j < 64; ++j) {
+                c = bstr->data[pos[2] + 1 + j];
+                if (hexdigit_to_int(c) > 15) {
+                        return WC_ERROR_INVALID_ARGUMENT;
+                }
+                if (c >= 'A' && c <= 'F') {
+                        is_noncanonical = 1;
+                }
+        }
+        /* Check that the middle field is the ASCII text "public". */
+        btfromblk(sep, &bstr->data[pos[1] + 1], pos[2] - pos[1] - 1);
+        if (biseqcstr(&sep, "public") != 1) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        /* Parse the amount and hash fields. */
+        btfromblk(sep, &bstr->data[pos[0]], pos[1] - pos[0]);
+        c = 0;
+        err = wc_from_bstring(&ret.amount, &c, &sep);
+        is_noncanonical = is_noncanonical || c;
+        if (err != WC_SUCCESS) {
+                return err;
+        }
+        /* Canonical form includes the 'e'. */
+        is_noncanonical = is_noncanonical || pos[0] == 0;
+        for (j = 0; j < 32; ++j) {
+                ret.hash.u8[j] = hexdigit_to_int(bstr->data[pos[2] + 1 + 2*j]) << 4
+                               | hexdigit_to_int(bstr->data[pos[2] + 1 + 2*j + 1]);
+        }
+        /* Write to output parameters. */
+        *pub = ret;
+        if (noncanonical) {
+                *noncanonical = is_noncanonical;
         }
         return WC_SUCCESS;
 }

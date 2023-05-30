@@ -315,6 +315,22 @@ wc_error_t wc_public_is_valid(const wc_public_t *pub);
  */
 wc_error_t wc_public_to_string(bstring *bstr, const wc_public_t *pub);
 
+/**
+ * @brief Parse a wc_public_t from a bstring.
+ *
+ * This function parses a wc_public_t from a bstring containing a webcash
+ * public hash of the standard format "e{amount}:public:{hash}", with the hash
+ * being a 32-byte hexadecimal number with lowercase letters (uppercase
+ * letters are understood but noncanonical).
+ *
+ * @param pub An output argument to be filled with the parsed wc_public_t.
+ * @param noncanonical An output argument to be filled with a boolean
+ * indicating whether the public hash deviated from canonical format.
+ * @param bstr The bstring containing the public hash to parse.
+ * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
+ */
+wc_error_t wc_public_parse(wc_public_t *pub, int *noncanonical, bstring bstr);
+
 #ifdef __cplusplus
 }
 #endif
