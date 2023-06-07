@@ -9,6 +9,8 @@
 
 #include <webcash.h>
 
+#include <bstraux.h>
+
 TEST(gtest, wc_zero) {
         wc_amount_t init = 0;
         wc_amount_t defn = WC_ZERO;
@@ -267,6 +269,61 @@ TEST(gtest, wc_public_string) {
         EXPECT_EQ(noncanonical, 0);
         EXPECT_EQ(pub.amount, INT64_C(1234567800));
         EXPECT_EQ(memcmp(&pub.hash.u8, &hash.u8, sizeof(hash.u8)), 0);
+}
+
+TEST(gtest, wc_mining_nonces) {
+        tagbstring b64 = {0};
+        bstring dec = nullptr;
+        int error = 0;
+        int i = 0, u = 0, t = 0, h = 0;
+        blk2tbstr(b64, wc_mining_nonces, sizeof(wc_mining_nonces));
+        dec = bBase64DecodeEx(&b64, &error);
+        EXPECT_EQ(error, BSTR_OK);
+        ASSERT_NE(dec, nullptr);
+        EXPECT_EQ(dec->slen, 3*1000);
+        for (; i < 1000; ++i) {
+                u = i % 10;
+                t = (i / 10) % 10;
+                h = (i / 100) % 10;
+                EXPECT_EQ(dec->data[3*i], '0' + h);
+                EXPECT_EQ(dec->data[3*i + 1], '0' + t);
+                EXPECT_EQ(dec->data[3*i + 2], '0' + u);
+        }
+        EXPECT_EQ(dec->data[3*i], '\0');
+}
+
+TEST(gtest, wc_mining_final) {
+        tagbstring b64 = {0};
+        bstring dec = nullptr;
+        int error = 0;
+        blk2tbstr(b64, wc_mining_final, sizeof(wc_mining_final));
+        dec = bBase64DecodeEx(&b64, &error);
+        EXPECT_EQ(error, BSTR_OK);
+        ASSERT_NE(dec, nullptr);
+        EXPECT_EQ(dec->slen, 1);
+        EXPECT_EQ(dec->data[0], '}');
+}
+
+TEST(gtest, wc_mining_8way) {
+        const char *nonces =
+                "abcd" "efgh" "ijkl" "mnop" "qrst" "uvwx" "yz01" "2345";
+        struct sha256 hashes1[8] = {0};
+        struct sha256 hashes2[8] = {0};
+        struct sha256_ctx ctx = SHA256_INIT;
+        int i = 0;
+        for (; i < 8; ++i) {
+                sha256_update(&ctx, nonces, 4);
+                sha256_update(&ctx, &nonces[4*i], 4);
+                sha256_update(&ctx, nonces, 4);
+                sha256_done(&hashes1[i], &ctx);
+                ctx = SHA256_INIT;
+        }
+        EXPECT_EQ(hashes1[0].u8[0], 0x88);
+        EXPECT_EQ(hashes1[0].u8[1], 0x7f);
+        EXPECT_EQ(hashes1[7].u8[30], 0x86);
+        EXPECT_EQ(hashes1[7].u8[31], 0x50);
+        wc_mining_8way(hashes2[0].u8, &ctx, (const unsigned char*)nonces, (const unsigned char*)nonces, (const unsigned char*)nonces);
+        EXPECT_EQ(memcmp(hashes1, hashes2, sizeof(hashes1)), 0);
 }
 
 int main(int argc, char **argv) {
