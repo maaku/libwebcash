@@ -380,6 +380,60 @@ void wc_mining_8way(
         const unsigned char nonce2[4*8],
         const unsigned char final[4]);
 
+/**
+ * @brief Derive a webcash secret from a master / root secret and chaincode +
+ * depth.
+ *
+ * Deterministic webcash wallets derive successive webcash secrets from a
+ * single master secret using a deterministic application of the SHA256
+ * hashing function.  The chaincode specifies which sequence of secrets to
+ * use, and the depth is the ordinal number of the secret from this chain.
+ *
+ * This API performs bstring allocation and therefore can fail.  See also
+ * wc_derive_serials which performs multiple secret derivations in parallel
+ * (where supported by the underlying hardware), storing generated secrets to
+ * a caller-provided buffer and never fails.
+ *
+ * @param serial A pointer to a bstring to be filled with the generated serial.
+ * @param hdroot The master secret to derive from.
+ * @param chaincode The chaincode to use.
+ * @param depth The depth of the secret to derive.
+ * @return wc_error_t WC_SUCCESS, WC_ERROR_INVALID_ARGUMENT, or
+ * WC_ERROR_OUT_OF_MEMORY.
+ */
+wc_error_t wc_derive_serial(
+        bstring *bstr,
+        const struct sha256 *hdroot,
+        uint64_t chaincode,
+        uint64_t depth);
+
+/**
+ * @brief Derive multiple webcash secrets from a master / root secret and
+ * chaincode + depth.
+ *
+ * This function derives multiple webcash secrets from a single master secret
+ * using a deterministic application of the SHA256 hashing function, making
+ * use of parallel / vector code on platforms that support it.  The chaincode
+ * specifies which sequence of secrets to use, and start is the ordinal number
+ * of the first secret from that chain to generate.  A total of count
+ * consecutive secrets from the chain are generated.  The secrets are written
+ * to a caller-provided buffer, which must be at least count * 64 bytes in
+ * size.  [64 = 2 * sizeof(struct sha256), the size of a hex-encoded hash
+ * value.]
+ *
+ * @param out A buffer to be filled with the generated secrets, of length at least count * 64 bytes.
+ * @param hdroot The master secret to derive from.
+ * @param chaincode The chaincode to use.
+ * @param start The depth of the first secret to derive.
+ * @param count The number of secrets to derive.
+ */
+void wc_derive_serials(
+        char out[],
+        const struct sha256 *hdroot,
+        uint64_t chaincode,
+        uint64_t start,
+        size_t count);
+
 #ifdef __cplusplus
 }
 #endif

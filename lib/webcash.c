@@ -7,12 +7,15 @@
 
 #include "webcash.h"
 
+#include "support/cleanse.h"
+
 #include <sha2/sha256.h>
 
 #include <ctype.h>
 #include <inttypes.h>
 #include <stdint.h>
 
+static unsigned char hexdigits[] = "0123456789abcdef";
 static unsigned char hexdigit_to_int(char c) {
         if (c >= '0' && c <= '9') {
                 return c - '0';
@@ -26,9 +29,19 @@ static unsigned char hexdigit_to_int(char c) {
         return 0xff;
 }
 
+static struct sha256_ctx webcashwalletv1_midstate = SHA256_INIT;
 wc_error_t wc_init(void) {
+        const char *webcashwalletv1_tag_str = "webcashwalletv1";
+        struct sha256 webcashwalletv1_tag;
         /* Setup libsha2 */
         sha256_auto_detect();
+        /* Initialize the midstate for the webcashwalletv1 chain derivation tag. */
+        sha256_init(&webcashwalletv1_midstate);
+        sha256_update(&webcashwalletv1_midstate, (const unsigned char*)webcashwalletv1_tag_str, strlen(webcashwalletv1_tag_str));
+        sha256_done(&webcashwalletv1_tag, &webcashwalletv1_midstate);
+        sha256_init(&webcashwalletv1_midstate);
+        sha256_update(&webcashwalletv1_midstate, webcashwalletv1_tag.u8, sizeof(webcashwalletv1_tag.u8));
+        sha256_update(&webcashwalletv1_midstate, webcashwalletv1_tag.u8, sizeof(webcashwalletv1_tag.u8));
         return WC_SUCCESS;
 }
 
@@ -589,6 +602,76 @@ void wc_mining_8way(
 		WriteBE64(blocks + 64*i + 56, (ctx->bytes + 12) << 3);
 	}
 	sha256_midstate((struct sha256*)hashes, ctx->s, blocks, 8);
+}
+
+wc_error_t wc_derive_serial(
+        bstring *bstr,
+        const struct sha256 *hdroot,
+        uint64_t chaincode,
+        uint64_t depth
+) {
+        char buf[64] = {0};
+        if (!bstr) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (!hdroot) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        wc_derive_serials(buf, hdroot, chaincode, depth, 1);
+        if (*bstr) {
+                /* prevent memory leaks */
+                bdestroy(*bstr);
+        }
+        *bstr = blk2bstr(buf, 64);
+        memory_cleanse(buf, 64);
+        if (*bstr == NULL) {
+                return WC_ERROR_OUT_OF_MEMORY;
+        }
+        return WC_SUCCESS;
+}
+
+void wc_derive_serials(
+        char out[],
+        const struct sha256 *hdroot,
+        uint64_t chaincode,
+        uint64_t depth,
+        size_t count
+) {
+        unsigned char blocks[8*64] = {0};
+        size_t n = 0, m = 0;
+        int i = 0;
+        if (count == 0) {
+                return;
+        }
+        for (n = 0; n < (count < 8 ? count : 8); ++n) {
+                memcpy(   blocks + 64*n +  0, hdroot->u8, 32);
+                WriteBE64(blocks + 64*n + 32, chaincode);
+                        *(blocks + 64*n + 48) = 0x80; /* padding */
+                WriteBE64(blocks + 64*n + 56, (webcashwalletv1_midstate.bytes + 48) << 3);
+        }
+        switch (count % 8) {
+        case 0: do {    WriteBE64(blocks + 64*7 + 40, depth + 7);
+        case 7:         WriteBE64(blocks + 64*6 + 40, depth + 6);
+        case 6:         WriteBE64(blocks + 64*5 + 40, depth + 5);
+        case 5:         WriteBE64(blocks + 64*4 + 40, depth + 4);
+        case 4:         WriteBE64(blocks + 64*3 + 40, depth + 3);
+        case 3:         WriteBE64(blocks + 64*2 + 40, depth + 2);
+        case 2:         WriteBE64(blocks + 64*1 + 40, depth + 1);
+        case 1:         WriteBE64(blocks + 64*0 + 40, depth + 0);
+                        m = (count - 1) % 8 + 1;
+                        sha256_midstate((struct sha256*)out, webcashwalletv1_midstate.s, blocks, m);
+                        for (i = m*32 - 1; i >= 0; --i) {
+                                out[2*i + 1] = hexdigits[(out[i] >> 0) & 0x0f];
+                                out[2*i + 0] = hexdigits[(out[i] >> 4) & 0x0f];
+                        }
+                        out += m*64;
+                        depth += m;
+                        count -= m;
+                } while (count > 0);
+        }
+        while (n) {
+                memory_cleanse(blocks + 64*(--n), 48);
+        }
 }
 
 /* End of File

@@ -326,6 +326,55 @@ TEST(gtest, wc_mining_8way) {
         EXPECT_EQ(memcmp(hashes1, hashes2, sizeof(hashes1)), 0);
 }
 
+TEST(gtetst, wc_derive_serials) {
+        char buf1[64*20 + 1] = {0};
+        char buf2[64*20 + 1] = {
+                "be835897e85381905634f8bcc5db1eaa384d363c326335f4e9d89d119e78b0c5"
+                "1f8e224c65115ce8eaf98b47457b0e5da0fcfcc480f0b3aafc516d5677eb24c1"
+                "e7b87e9e263d6496888e252c67292637deb691cbf1f4894c9cfa7bfc440ffa05"
+                "5a9ecb6cbe5ce83f15fc36ec8891fc6cc85c73099920721868934b0b934fba1d"
+                "e10419abfca5e06d931a4faf4d6231ae2de6179459d2d58d1cfdcd0feb2b89b1"
+                "9da3e943eda843e67d927b4a048095c57eecd8aeda7167e67c00f338031e179c"
+                "178ab1df04e28f95d062fddb69babcf1f6d939a8fe27968a3fb54a77137b89a3"
+                "71cf21df71b545440c2ca6cc4942ff4d81f2958e897741d403d2d7a3593a1cb8"
+                "98bb2cc75c9a479b98bc432e9a75e395ea17fcccd0191c0b7fcee5f39e6cbecb"
+                "1f108b5d962b985b7f61ba79b228b8a91d51fd6e3f4cb2fb751fa9f13d55aa35"
+                "2c1037c9a2c301ee2d061a708968bcc76b71f7b872908bf979a7433f782ea880"
+                "f474ad4dfc83771371cb650cb5b5fab0bda7cb8fd914abc607729ad65c192e83"
+                "0830a4f79de40c476cd56ce317233873c27bdb5a92f11e24a12dbbe2dac2b43a"
+                "c58fec454214e4e6cca720077070ee92da82e1058538559fb31aa5c7238f706d"
+                "fa941605fe5f750d26cdc8de10f8ddb9fb80acfc06f7f782de265c865d3789bd"
+                "452dda0c8268cacca437490086c29afc326f4611c8843d5d4454dd0b50ce7cea"
+                "0979fd3d964093cc34f66de4d7e7dab6c2e5573c9cc4fae7d8b2b24308c6e886"
+                "822ab78f6fbf7e556dca72368084c2764602c24aad0c791309ab2130c99a265b"
+                "e0958fff040e6908eeea4f5f8a729b15b5ae4bf44e07e62911e5e5ef92420751"
+                "b6c25321889b1a9dc7d0058ec98f223f8bd42af49a6eb103d4a53e97bd9c9ecf"
+        };
+        struct sha256 hdroot = {{
+                0x40, 0x7c, 0x95, 0x0b, 0x3d, 0xe6, 0x00, 0x64,
+                0xd7, 0xff, 0x74, 0x4b, 0x9b, 0x47, 0x43, 0xb8,
+                0xde, 0x58, 0xe9, 0x43, 0xe7, 0xc5, 0x37, 0xdf,
+                0x3d, 0x3a, 0x8a, 0x29, 0xa3, 0x2e, 0x1d, 0x0f
+        }};
+        uint64_t chaincode = 1; /* PAY */
+        uint64_t depth = 0;
+        size_t count = 20;
+        bstring bstr = nullptr;
+        size_t n = 0;
+        wc_derive_serials(buf1, &hdroot, chaincode, depth, count);
+        EXPECT_EQ(memcmp(buf1, buf2, sizeof(buf1)), 0);
+        for (; n < count; ++n) {
+                EXPECT_EQ(wc_derive_serial(&bstr, &hdroot, chaincode, depth + n), WC_SUCCESS);
+                EXPECT_NE(bstr, nullptr);
+                if (bstr) {
+                        EXPECT_EQ(bstr->slen, 64);
+                        EXPECT_EQ(bisstemeqblk(bstr, buf2 + n*64, 64), 1);
+                }
+                bdestroy(bstr);
+                bstr = nullptr;
+        }
+}
+
 int main(int argc, char **argv) {
         ::testing::InitGoogleTest(&argc, argv);
         assert(wc_init() == WC_SUCCESS);
