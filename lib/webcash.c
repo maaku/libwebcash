@@ -649,6 +649,18 @@ void wc_derive_serials(
                         *(blocks + 64*n + 48) = 0x80; /* padding */
                 WriteBE64(blocks + 64*n + 56, (webcashwalletv1_midstate.bytes + 48) << 3);
         }
+        /* This black magic is “Duff's device.”  The outer switch operates as
+         * goto switchboard, jumping execution into the loop at one of the
+         * case labels.  After that initial jump you can ignore the switch
+         * statement--it becomes a do-while loop.
+         *
+         * libsha2 SHA256 digests are most efficiently performed in parallel
+         * with batch sizes of up to 8 hashes at a time, which is what this
+         * code achieves.  The first time through the loop it performs the odd
+         * number of hashing operations to get the number of remaining hashes
+         * to be a multiple of eight, then it processes batches of eight on
+         * each successive pass through the loop, until all serials have been
+         * derived. */
         switch (count % 8) {
         case 0: do {    WriteBE64(blocks + 64*7 + 40, depth + 7);
         case 7:         WriteBE64(blocks + 64*6 + 40, depth + 6);
@@ -658,7 +670,7 @@ void wc_derive_serials(
         case 3:         WriteBE64(blocks + 64*2 + 40, depth + 2);
         case 2:         WriteBE64(blocks + 64*1 + 40, depth + 1);
         case 1:         WriteBE64(blocks + 64*0 + 40, depth + 0);
-                        m = (count - 1) % 8 + 1;
+                        m = (count - 1) % 8 + 1; /* count % 8, but with 0 mod 8 becoming 8 */
                         sha256_midstate((struct sha256*)out, webcashwalletv1_midstate.s, blocks, m);
                         for (i = m*32 - 1; i >= 0; --i) {
                                 out[2*i + 1] = hexdigits[(out[i] >> 0) & 0x0f];
