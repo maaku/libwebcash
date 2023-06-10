@@ -8,6 +8,7 @@
 #include "webcash.h"
 
 #include "support/cleanse.h"
+#include "sqlite3.h"
 
 #include <sha2/sha256.h>
 

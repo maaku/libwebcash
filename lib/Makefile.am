@@ -6,4 +6,4 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libwebcash.pc
 
 libwebcash_la_CPPFLAGS = -I$(top_srcdir)/include $(BSTRING_CPPFLAGS) $(SHA2_CPPFLAGS)
-libwebcash_la_SOURCES = support/cleanse.c webcash.c
+libwebcash_la_SOURCES = support/cleanse.c sqlite3.c webcash.c
