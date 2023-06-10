@@ -375,6 +375,45 @@ TEST(gtetst, wc_derive_serials) {
         }
 }
 
+TEST(gtest, wc_wallet_open_close) {
+        wc_storage_callbacks_t incompletecb = {
+                .log_open = [](void *logurl) -> wc_log_handle_t {
+                        return (wc_log_handle_t)1;
+                },
+        };
+        wc_storage_callbacks_t cb = {
+                .log_open = [](void *logurl) -> wc_log_handle_t {
+                        return nullptr;
+                },
+                .db_open = [](void *dburl) -> wc_db_handle_t {
+                        return nullptr;
+                },
+        };
+        wc_wallet_handle_t w = nullptr;
+        EXPECT_EQ(wc_wallet_open(nullptr, nullptr, nullptr, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(w, nullptr);
+        EXPECT_EQ(wc_wallet_open(&w, nullptr, nullptr, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(w, nullptr);
+        EXPECT_EQ(wc_wallet_open(nullptr, &cb, nullptr, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(w, nullptr);
+        EXPECT_EQ(wc_wallet_open(&w, &incompletecb, nullptr, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(w, nullptr);
+        EXPECT_EQ(wc_wallet_open(&w, &cb, nullptr, nullptr), WC_ERROR_LOG_OPEN_FAILED);
+        EXPECT_EQ(w, nullptr);
+        cb.log_open = [](void *logurl) -> wc_log_handle_t {
+                return (wc_log_handle_t)1;
+        };
+        EXPECT_EQ(wc_wallet_open(&w, &cb, nullptr, nullptr), WC_ERROR_DB_OPEN_FAILED);
+        EXPECT_EQ(w, nullptr);
+        cb.db_open = [](void *dburl) -> wc_db_handle_t {
+                return (wc_db_handle_t)2;
+        };
+        EXPECT_EQ(wc_wallet_open(&w, &cb, nullptr, nullptr), WC_SUCCESS);
+        ASSERT_NE(w, nullptr);
+        EXPECT_EQ(wc_wallet_close(nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wc_wallet_close(w), WC_SUCCESS);
+}
+
 int main(int argc, char **argv) {
         ::testing::InitGoogleTest(&argc, argv);
         assert(wc_init() == WC_SUCCESS);

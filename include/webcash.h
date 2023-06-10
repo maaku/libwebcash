@@ -22,7 +22,9 @@ typedef enum wc_error {
         WC_SUCCESS = 0,                 /**< Success */
         WC_ERROR_INVALID_ARGUMENT = -1, /**< Invalid argument */
         WC_ERROR_OUT_OF_MEMORY = -2,    /**< Out of memory */
-        WC_ERROR_OVERFLOW = -3          /**< Overflow */
+        WC_ERROR_OVERFLOW = -3,         /**< Overflow */
+        WC_ERROR_DB_OPEN_FAILED = -4,   /**< Database open failed */
+        WC_ERROR_LOG_OPEN_FAILED = -5   /**< Recovery log open failed */
 } wc_error_t;
 
 /**
@@ -433,6 +435,48 @@ void wc_derive_serials(
         uint64_t chaincode,
         uint64_t start,
         size_t count);
+
+/* Implementation details of these structures are private to the library. */
+typedef struct wc_wallet *wc_wallet_handle_t;
+/* Implementation details of these strictires are specific to the client. */
+typedef struct wc_db *wc_db_handle_t;
+typedef struct wc_log *wc_log_handle_t;
+
+/**
+ * @brief Callbacks for interacting with data storage for the wallet,
+ * including both a read-write database and an append-only recovery log.
+ */
+typedef struct wc_storage_callbacks {
+        wc_log_handle_t (*log_open)(void *logurl);
+        void (*log_close)(wc_log_handle_t log); /* optional */
+        wc_db_handle_t (*db_open)(void *dburl);
+        void (*db_close)(wc_db_handle_t db); /* optional */
+} wc_storage_callbacks_t;
+
+/**
+ * @brief Open a wallet.
+ *
+ * @param wallet An out parameter to be filled in with a pointer to the
+ * internal wallet state.  Only modified if the function returns WC_SUCCESS.
+ * @param callbacks A pointer to a structure containing client-configured
+ * callbacks for interfacing with persistent data storage.
+ * @param logurl Some client-defined path for opening a log file.
+ * @param dburl Some client-defined connection string for opening a database.
+ * @return wc_error_t WC_SUCCESS, WC_ERROR_INVALID_ARGUMENT, or
+ * WC_ERROR_OUT_OF_MEMORY.
+ */
+wc_error_t wc_wallet_open(wc_wallet_handle_t *wallet,
+        const wc_storage_callbacks_t *callbacks,
+        void *logurl,
+        void *dburl);
+
+/**
+ * @brief Close a wallet, freeing all associated resources.
+ *
+ * @param wallet The wallet to close.
+ * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
+ */
+wc_error_t wc_wallet_close(wc_wallet_handle_t wallet);
 
 #ifdef __cplusplus
 }
