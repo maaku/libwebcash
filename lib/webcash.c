@@ -840,5 +840,56 @@ wc_error_t wc_server_disconnect(wc_server_handle_t c) {
         return WC_SUCCESS;
 }
 
+struct wc_ui {
+        const struct wc_ui_callbacks *cb;
+        wc_window_handle_t hwnd;
+};
+
+wc_error_t wc_ui_startup(
+        wc_ui_handle_t *ui_out,
+        const wc_ui_callbacks_t *callbacks,
+        wc_window_params_t params
+) {
+        wc_ui_handle_t ui = NULL;
+        /* Must have a way of returning the initialize user interface to the caller. */
+        if (!ui_out) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        /* The startup callback is required. */
+        if (!callbacks || !callbacks->startup) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        /* Allocate the user interface object. */
+        ui = malloc(sizeof(struct wc_ui));
+        if (!ui) {
+                return WC_ERROR_OUT_OF_MEMORY;
+        }
+        /* Initialize the user interface object. */
+        ui->cb = callbacks;
+        ui->hwnd = callbacks->startup(params);
+        if (!ui->hwnd) {
+                free(ui);
+                return WC_ERROR_STARTUP_FAILED;
+        }
+        /* Return the user interface object. */
+        *ui_out = ui;
+        return WC_SUCCESS;
+}
+
+wc_error_t wc_ui_shutdown(wc_ui_handle_t ui) {
+        if (!ui) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (ui->hwnd) {
+                if  (ui->cb && ui->cb->shutdown) {
+                        ui->cb->shutdown(ui->hwnd);
+                }
+                ui->hwnd = NULL;
+        }
+        ui->cb = NULL;
+        free(ui);
+        return WC_SUCCESS;
+}
+
 /* End of File
  */

@@ -441,6 +441,33 @@ TEST(gtest, wc_server_connect) {
         EXPECT_EQ(wc_server_disconnect(c), WC_SUCCESS);
 }
 
+TEST(gtest, wc_ui_startup) {
+        wc_ui_callbacks_t incompletecb = {};
+        wc_ui_callbacks_t cb = {
+                .startup = [](wc_window_params_t params) -> wc_window_handle_t {
+                        return (wc_window_handle_t)nullptr;
+                },
+        };
+        wc_ui_handle_t ui = nullptr;
+        EXPECT_EQ(wc_ui_startup(nullptr, nullptr, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(ui, nullptr);
+        EXPECT_EQ(wc_ui_startup(&ui, nullptr, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(ui, nullptr);
+        EXPECT_EQ(wc_ui_startup(nullptr, &cb, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(ui, nullptr);
+        EXPECT_EQ(wc_ui_startup(&ui, &incompletecb, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(ui, nullptr);
+        EXPECT_EQ(wc_ui_startup(&ui, &cb, nullptr), WC_ERROR_STARTUP_FAILED);
+        EXPECT_EQ(ui, nullptr);
+        cb.startup = [](wc_window_params_t params) -> wc_window_handle_t {
+                return (wc_window_handle_t)1;
+        };
+        EXPECT_EQ(wc_ui_startup(&ui, &cb, nullptr), WC_SUCCESS);
+        ASSERT_NE(ui, nullptr);
+        EXPECT_EQ(wc_ui_shutdown(nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wc_ui_shutdown(ui), WC_SUCCESS);
+}
+
 int main(int argc, char **argv) {
         ::testing::InitGoogleTest(&argc, argv);
         assert(wc_init() == WC_SUCCESS);

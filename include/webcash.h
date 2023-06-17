@@ -80,7 +80,8 @@ typedef enum wc_error {
         WC_ERROR_OVERFLOW = -3,         /**< Overflow */
         WC_ERROR_DB_OPEN_FAILED = -4,   /**< Database open failed */
         WC_ERROR_LOG_OPEN_FAILED = -5,  /**< Recovery log open failed */
-        WC_ERROR_CONNECT_FAILED = -6    /**< Connection to server failed */
+        WC_ERROR_CONNECT_FAILED = -6,   /**< Connection to server failed */
+        WC_ERROR_STARTUP_FAILED = -7    /**< User interface startup failed */
 } wc_error_t;
 
 /**
@@ -643,6 +644,54 @@ wc_error_t wc_server_connect(
  * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
  */
 wc_error_t wc_server_disconnect(wc_server_handle_t server);
+
+/*****************************************************************************
+ * User interface callbacks
+ *****************************************************************************/
+
+/* Implementation details of these structures are specific to the client. */
+typedef struct wc_window *wc_window_handle_t;
+typedef struct wc_window_params *wc_window_params_t;
+
+typedef struct wc_ui_callbacks {
+        /* Initialization */
+        wc_window_handle_t (*startup)(wc_window_params_t params);
+        void (*shutdown)(wc_window_handle_t window);
+} wc_ui_callbacks_t;
+
+/* Implementation details of these structures are private to the library. */
+typedef struct wc_ui *wc_ui_handle_t;
+
+/**
+ * @brief Initialize the user interface.
+ *
+ * This API is optimistically named "init" but it may not actually initialize
+ * anything.  The simplest implementation would merely set up callbacks for
+ * the UI object.
+ *
+ * @param ui The UI object to be filled in.
+ * @param callbacks The callbacks to be used for interacting with the user
+ * interface.
+ * @param params The parameters to be used for initializing the user
+ * interface.
+ * @return wc_error_t WC_SUCCESS if the UI object was successfully
+ * initialized, or an error code otherwise.
+ */
+wc_error_t wc_ui_startup(
+        wc_ui_handle_t *ui,
+        const wc_ui_callbacks_t *callbacks,
+        wc_window_params_t params);
+
+/**
+ * @brief Shut down the user interface.
+ *
+ * Tears down any open windows, and frees any resources associated with the UI
+ * object.
+ *
+ * @param ui The UI object to be shut down.
+ * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
+ */
+wc_error_t wc_ui_shutdown(wc_ui_handle_t ui);
 
 #ifdef __cplusplus
 }
