@@ -14,6 +14,7 @@ extern "C" {
 
 #include <bstrlib.h>
 #include <sha2/sha256.h>
+#include <time.h> /* for time_t, struct tm */
 
 /**
  * @brief A webcash library error code.
@@ -26,6 +27,16 @@ typedef enum wc_error {
         WC_ERROR_DB_OPEN_FAILED = -4,   /**< Database open failed */
         WC_ERROR_LOG_OPEN_FAILED = -5   /**< Recovery log open failed */
 } wc_error_t;
+
+/**
+ * @brief A timestamp value containing seconds since the Webcash epoch.
+ */
+typedef time_t wc_time_t;
+
+/**
+ * @brief The offset in seconds from the Unix epoch to the Webcash epoch.
+ */
+#define WC_TIME_EPOCH 1641067200 /* 2022-01-01T00:00:00Z */
 
 /**
  * @brief Initialize libwebcash.
