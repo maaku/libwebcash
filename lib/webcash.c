@@ -958,6 +958,22 @@ wc_error_t wc_server_disconnect(wc_server_handle_t c) {
         return WC_SUCCESS;
 }
 
+wc_error_t wc_server_get_terms(
+        wc_server_handle_t c,
+        bstring *terms
+) {
+        if (!c || !terms) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (!c->conn) {
+                return WC_ERROR_NOT_CONNECTED;
+        }
+        if (!c->cb || !c->cb->get_terms) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        return c->cb->get_terms(c->conn, terms);
+}
+
 struct wc_ui {
         const struct wc_ui_callbacks *cb;
         wc_window_handle_t hwnd;

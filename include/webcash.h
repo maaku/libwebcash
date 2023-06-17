@@ -92,6 +92,8 @@ typedef enum wc_error {
         WC_ERROR_DB_CORRUPT,
         /** Recovery log open failed */
         WC_ERROR_LOG_OPEN_FAILED,
+        /** Not connected to server */
+        WC_ERROR_NOT_CONNECTED,
         /** Connection to server failed */
         WC_ERROR_CONNECT_FAILED,
         /** User interface startup failed */
@@ -847,6 +849,9 @@ typedef struct wc_server_callbacks {
         /* Initialization */
         wc_conn_handle_t (*connect)(wc_server_url_t url);
         void (*disconnect)(wc_conn_handle_t conn);
+
+        /* Terms of Service */
+        wc_error_t (*get_terms)(wc_conn_handle_t conn, bstring *terms);
 } wc_server_callbacks_t;
 
 /* Implementation details of these structures are private to the library. */
@@ -884,6 +889,23 @@ wc_error_t wc_server_connect(
  * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
  */
 wc_error_t wc_server_disconnect(wc_server_handle_t server);
+
+/**
+ * @brief Get the current terms of service from the server.
+ *
+ * This API is used to fetch the current terms of service from the server.
+ * The terms are returned as a UTF-8 encoded text/plain document.
+ *
+ * @param server A connected server connection.
+ * @param terms An out parameter to be filled in with the current terms of
+ * service.  Only valid if the function returns WC_SUCCESS.
+ * @return wc_error_t WC_SUCCESS if the terms of service were successfully
+ * fetched and the out parameter terms has been filled, or an error code
+ * otherwise.
+ */
+wc_error_t wc_server_get_terms(
+        wc_server_handle_t server,
+        bstring *terms);
 
 /*****************************************************************************
  * User interface callbacks
