@@ -74,14 +74,22 @@ extern "C" {
  * @brief A webcash library error code.
  */
 typedef enum wc_error {
-        WC_SUCCESS = 0,                 /**< Success */
-        WC_ERROR_INVALID_ARGUMENT = -1, /**< Invalid argument */
-        WC_ERROR_OUT_OF_MEMORY = -2,    /**< Out of memory */
-        WC_ERROR_OVERFLOW = -3,         /**< Overflow */
-        WC_ERROR_DB_OPEN_FAILED = -4,   /**< Database open failed */
-        WC_ERROR_LOG_OPEN_FAILED = -5,  /**< Recovery log open failed */
-        WC_ERROR_CONNECT_FAILED = -6,   /**< Connection to server failed */
-        WC_ERROR_STARTUP_FAILED = -7    /**< User interface startup failed */
+        /** Success */
+        WC_SUCCESS = 0,
+        /** Invalid argument */
+        WC_ERROR_INVALID_ARGUMENT,
+        /** Out of memory */
+        WC_ERROR_OUT_OF_MEMORY,
+        /** Overflow */
+        WC_ERROR_OVERFLOW,
+        /** Database open failed */
+        WC_ERROR_DB_OPEN_FAILED,
+        /** Recovery log open failed */
+        WC_ERROR_LOG_OPEN_FAILED,
+        /** Connection to server failed */
+        WC_ERROR_CONNECT_FAILED,
+        /** User interface startup failed */
+        WC_ERROR_STARTUP_FAILED
 } wc_error_t;
 
 /**
