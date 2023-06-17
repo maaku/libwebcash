@@ -16,6 +16,60 @@ extern "C" {
 #include <sha2/sha256.h>
 #include <time.h> /* for time_t, struct tm */
 
+/*****************************************************************************
+ * libwebcash API
+ *
+ * The libwebcash library is has five different primary components:
+ *
+ * 1. A context-independent interface for creating and manipulating webcash
+ *    datastructures, such as serializing/deserializing webcash claim codes,
+ *    public hashes, and amount strings, and generating new webcash claim
+ *    codes from a wallet root secret.
+ *
+ * 2. A storage interface for interacting with the wallet backing store and
+ *    recovery log.  The caller initializes this component with a set of
+ *    callbacks for interacting with platform-specific data storage APIs.
+ *
+ *    A default implementation is provided which uses SQLite as the backing
+ *    store and a simple file as the recovery log, using POSIX file locking.
+ *
+ * 3. A server connection interface for doing individual calls to the webcash
+ *    server for things like getting the current terms of service, checking
+ *    the validity of a webcash claim code or public hash, doing a secret
+ *    replacement, getting the current mining parameters, or submitting a
+ *    mining payload.
+ *
+ *    No complete default implementation is provided as TLS connection to the
+ *    webcash server is necessary, but too complex for this simple C library
+ *    to safely provide.  Use your platform or language's native HTTPS client
+ *    library to implement this interface and provide the necessary callbacks.
+ *
+ * 4. A set of interface callbacks for interacting with the user, such as
+ *    prompting for acceptance of the Webcash terms of service, confirmation
+ *    of intent before doing a secret replacement, and displaying webcash
+ *    payment codes.
+ *
+ *    No default implementation is provided as user interfaces are highly
+ *    platform specific.  Use your platform or language's native UI library to
+ *    implement this interface and provide the necessary callbacks.
+ *
+ * 5. A Webcash wallet context interface for doing things like creating a new
+ *    wallet, opening an existing wallet, recovering a wallet from its master
+ *    secret, making payments, mining, and getting the current wallet balance.
+ *
+ *    The Webcash wallet context interface is constructed with handles to the
+ *    storage, server connection, and user interface components, and uses them
+ *    to implement the platform-independent logic of a Webcash wallet.
+ *
+ * Most users of the library will only need to use the Webcash wallet context
+ * interface, and will have to provide just the necessary callbacks for the
+ * other components to work in the platform environment on which it is run.
+ *****************************************************************************/
+
+/*****************************************************************************
+ * Context-independent Webcash datastructures and APIs
+ *****************************************************************************/
+
 /**
  * @brief A webcash library error code.
  */
@@ -471,6 +525,10 @@ void wc_derive_serials(
         uint64_t chaincode,
         uint64_t start,
         size_t count);
+
+/*****************************************************************************
+ * Storage interface (database and recovery log)
+ *****************************************************************************/
 
 /* Implementation details of these structures are specific to the client. */
 typedef struct wc_log *wc_log_handle_t;
