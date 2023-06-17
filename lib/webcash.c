@@ -50,13 +50,21 @@ wc_amount_t wc_zero(void) {
         return WC_ZERO;
 }
 
-wc_error_t wc_from_cstring(wc_amount_t *amt, int *noncanonical, const char *str) {
+wc_error_t wc_from_cstring(
+        wc_amount_t *amt,
+        int *noncanonical,
+        const char *str
+) {
         struct tagbstring tstr = {0};
         btfromcstr(tstr, str);
         return wc_from_bstring(amt, noncanonical, &tstr);
 }
 
-wc_error_t wc_from_bstring(wc_amount_t *amt, int *noncanonical, bstring str) {
+wc_error_t wc_from_bstring(
+        wc_amount_t *amt,
+        int *noncanonical,
+        bstring str
+) {
         const unsigned char* pos = NULL;
         const unsigned char* end = NULL;
         uint64_t u64 = UINT64_C(0);
@@ -244,7 +252,11 @@ wc_error_t wc_secret_new(wc_secret_t *secret) {
         return WC_SUCCESS;
 }
 
-wc_error_t wc_secret_from_cstring(wc_secret_t *secret, wc_amount_t amount, const char *serial) {
+wc_error_t wc_secret_from_cstring(
+        wc_secret_t *secret,
+        wc_amount_t amount,
+        const char *serial
+) {
         bstring bstr = NULL;
         if (!secret) {
                 return WC_ERROR_INVALID_ARGUMENT;
@@ -262,7 +274,11 @@ wc_error_t wc_secret_from_cstring(wc_secret_t *secret, wc_amount_t amount, const
         return WC_SUCCESS;
 }
 
-wc_error_t wc_secret_from_bstring(wc_secret_t *secret, wc_amount_t amount, bstring *serial) {
+wc_error_t wc_secret_from_bstring(
+        wc_secret_t *secret,
+        wc_amount_t amount,
+        bstring *serial
+) {
         if (!secret) {
                 return WC_ERROR_INVALID_ARGUMENT;
         }
@@ -276,7 +292,11 @@ wc_error_t wc_secret_from_bstring(wc_secret_t *secret, wc_amount_t amount, bstri
         return WC_SUCCESS;
 }
 
-wc_error_t wc_secret_from_bstring_copy(wc_secret_t *secret, wc_amount_t amount, bstring serial) {
+wc_error_t wc_secret_from_bstring_copy(
+        wc_secret_t *secret,
+        wc_amount_t amount,
+        bstring serial
+) {
         bstring bstr = NULL;
         if (!secret) {
                 return WC_ERROR_INVALID_ARGUMENT;
@@ -330,7 +350,10 @@ wc_error_t wc_secret_destroy(wc_secret_t *secret) {
         return WC_SUCCESS;
 }
 
-wc_error_t wc_secret_to_string(bstring *bstr, const wc_secret_t *secret) {
+wc_error_t wc_secret_to_string(
+        bstring *bstr,
+        const wc_secret_t *secret
+) {
         bstring amt = NULL;
         if (!bstr) {
                 return WC_ERROR_INVALID_ARGUMENT;
@@ -357,7 +380,11 @@ wc_error_t wc_secret_to_string(bstring *bstr, const wc_secret_t *secret) {
         return WC_SUCCESS;
 }
 
-wc_error_t wc_secret_parse(wc_secret_t *secret, int *noncanonical, bstring bstr) {
+wc_error_t wc_secret_parse(
+        wc_secret_t *secret,
+        int *noncanonical,
+        bstring bstr
+) {
         struct tagbstring sep = bsStatic(":");
         int pos[3] = {0}; /* { amount, "secret", serial } */
         int is_noncanonical = 0;
@@ -431,7 +458,10 @@ wc_error_t wc_public_is_valid(const wc_public_t *pub) {
         return WC_SUCCESS;
 }
 
-wc_error_t wc_public_to_string(bstring *bstr, const wc_public_t *pub) {
+wc_error_t wc_public_to_string(
+        bstring *bstr,
+        const wc_public_t *pub
+) {
         bstring amt = NULL;
         if (!bstr) {
                 return WC_ERROR_INVALID_ARGUMENT;
@@ -468,7 +498,11 @@ wc_error_t wc_public_to_string(bstring *bstr, const wc_public_t *pub) {
         return WC_SUCCESS;
 }
 
-wc_error_t wc_public_parse(wc_public_t *pub, int *noncanonical, bstring bstr) {
+wc_error_t wc_public_parse(
+        wc_public_t *pub,
+        int *noncanonical,
+        bstring bstr
+) {
         struct tagbstring sep = bsStatic(":");
         int pos[3] = {0}; /* { amount, "public", hash } */
         int is_noncanonical = 0;

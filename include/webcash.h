@@ -98,7 +98,10 @@ wc_amount_t wc_zero(void);
  * @return wc_error_t WC_SUCCESS if the string was successfully parsed, or an
  * error code otherwise.
  */
-wc_error_t wc_from_cstring(wc_amount_t *amt, int *mutated, const char *str);
+wc_error_t wc_from_cstring(
+        wc_amount_t *amt,
+        int *noncanonical,
+        const char *str);
 
 /**
  * @brief Convert a bstring to a wc_amount_t.
@@ -118,7 +121,10 @@ wc_error_t wc_from_cstring(wc_amount_t *amt, int *mutated, const char *str);
  * @return wc_error_t WC_SUCCESS if the string was successfully parsed, or an
  * error code otherwise.
  */
-wc_error_t wc_from_bstring(wc_amount_t *amt, int *mutated, bstring str);
+wc_error_t wc_from_bstring(
+        wc_amount_t *amt,
+        int *noncanonical,
+        bstring str);
 
 /**
  * @brief Convert a wc_amount_t to a bstring.
@@ -175,7 +181,10 @@ wc_error_t wc_secret_new(wc_secret_t *secret);
  * @return wc_error_t WC_SUCCESS, WC_ERROR_INVALID_ARGUMENT, or
  * WC_ERROR_OUT_OF_MEMORY.
  */
-wc_error_t wc_secret_from_cstring(wc_secret_t *secret, wc_amount_t amount, const char *serial);
+wc_error_t wc_secret_from_cstring(
+        wc_secret_t *secret,
+        wc_amount_t amount,
+        const char *serial);
 
 /**
  * @brief Initialize a wc_secret_t with a given amount and serial.
@@ -193,7 +202,10 @@ wc_error_t wc_secret_from_cstring(wc_secret_t *secret, wc_amount_t amount, const
  * @param serial The webcash secret / serial itself, as a bstring.
  * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
  */
-wc_error_t wc_secret_from_bstring(wc_secret_t *secret, wc_amount_t amount, bstring *serial);
+wc_error_t wc_secret_from_bstring(
+        wc_secret_t *secret,
+        wc_amount_t amount,
+        bstring *serial);
 
 /**
  * @brief Initialize a wc_secret_t with a given amount and serial.
@@ -209,7 +221,10 @@ wc_error_t wc_secret_from_bstring(wc_secret_t *secret, wc_amount_t amount, bstri
  * @return wc_error_t WC_SUCCESS, WC_ERROR_INVALID_ARGUMENT, or
  * WC_ERROR_OUT_OF_MEMORY.
  */
-wc_error_t wc_secret_from_bstring_copy(wc_secret_t *secret, wc_amount_t amount, bstring serial);
+wc_error_t wc_secret_from_bstring_copy(
+        wc_secret_t *secret,
+        wc_amount_t amount,
+        bstring serial);
 
 /**
  * @brief Check whether a wc_secret_t is valid.
@@ -248,7 +263,9 @@ wc_error_t wc_secret_destroy(wc_secret_t *secret);
  * @return wc_error_t WC_SUCCESS, WC_ERROR_INVALID_ARGUMENT, or
  * WC_ERROR_OUT_OF_MEMORY.
  */
-wc_error_t wc_secret_to_string(bstring *bstr, const wc_secret_t *secret);
+wc_error_t wc_secret_to_string(
+        bstring *bstr,
+        const wc_secret_t *secret);
 
 /**
  * @brief Parse a wc_secret_t from a string.
@@ -265,7 +282,10 @@ wc_error_t wc_secret_to_string(bstring *bstr, const wc_secret_t *secret);
  * @return wc_error_t WC_SUCCESS, WC_ERROR_INVALID_ARGUMENT, or
  * WC_ERROR_OUT_OF_MEMORY.
  */
-wc_error_t wc_secret_parse(wc_secret_t *secret, int *noncanonical, bstring bstr);
+wc_error_t wc_secret_parse(
+        wc_secret_t *secret,
+        int *noncanonical,
+        bstring bstr);
 
 /**
  * @brief A webcash public hash and the amount allocated to it.
@@ -326,7 +346,9 @@ wc_error_t wc_public_is_valid(const wc_public_t *pub);
  * @return wc_error_t WC_SUCCESS, WC_ERROR_INVALID_ARGUMENT, or
  * WC_ERROR_OUT_OF_MEMORY.
  */
-wc_error_t wc_public_to_string(bstring *bstr, const wc_public_t *pub);
+wc_error_t wc_public_to_string(
+        bstring *bstr,
+        const wc_public_t *pub);
 
 /**
  * @brief Parse a wc_public_t from a bstring.
@@ -342,7 +364,10 @@ wc_error_t wc_public_to_string(bstring *bstr, const wc_public_t *pub);
  * @param bstr The bstring containing the public hash to parse.
  * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
  */
-wc_error_t wc_public_parse(wc_public_t *pub, int *noncanonical, bstring bstr);
+wc_error_t wc_public_parse(
+        wc_public_t *pub,
+        int *noncanonical,
+        bstring bstr);
 
 /**
  * @brief The strings "000" through "999", base64-encoded.
