@@ -414,6 +414,134 @@ TEST(gtest, wc_storage_open_close) {
         EXPECT_EQ(wc_storage_close(w), WC_SUCCESS);
 }
 
+std::map<std::string, time_t> g_terms;
+TEST(gtest, wc_storage_terms) {
+        wc_storage_callbacks_t cb = {
+                .log_open = [](wc_log_url_t logurl) -> wc_log_handle_t {
+                        return (wc_log_handle_t)1;
+                },
+                .db_open = [](wc_db_url_t dburl) -> wc_db_handle_t {
+                        return (wc_db_handle_t)2;
+                },
+                .any_terms = [](wc_db_handle_t db, int *any) -> wc_error_t {
+                        if (!any) {
+                                return WC_ERROR_INVALID_ARGUMENT;
+                        }
+                        *any = !g_terms.empty();
+                        return WC_SUCCESS;
+                },
+                .all_terms = [](wc_db_handle_t db, wc_db_terms_t *terms, size_t *count) {
+                        if (!count) {
+                                return WC_ERROR_INVALID_ARGUMENT;
+                        }
+                        if (!terms || *count < g_terms.size()) {
+                                *count = g_terms.size();
+                                return WC_ERROR_INSUFFICIENT_CAPACITY;
+                        }
+                        size_t i = 0;
+                        for (auto it = g_terms.begin(); it != g_terms.end(); ++it, ++i) {
+                                terms[i].when = it->second;
+                                terms[i].text = blk2bstr(it->first.c_str(), it->first.size());
+                                if (!terms[i].text) {
+                                        for (size_t j = 0; j < i; ++j) {
+                                                bdestroy(terms[j].text);
+                                        }
+                                        return WC_ERROR_OUT_OF_MEMORY;
+                                }
+                        }
+                        *count = i;
+                        return WC_SUCCESS;
+                },
+                .terms_accepted = [](wc_db_handle_t db, bstring bstr, wc_time_t *when) -> wc_error_t {
+                        if (!bstr || !when) {
+                                return WC_ERROR_INVALID_ARGUMENT;
+                        }
+                        std::string str((const char*)bstr->data, (size_t)bstr->slen);
+                        auto it = g_terms.find(str);
+                        if (it != g_terms.end()) {
+                                *when = it->second;
+                        } else {
+                                *when = 0;
+                        }
+                        return WC_SUCCESS;
+                },
+                .accept_terms = [](wc_db_handle_t db, bstring bstr, wc_time_t now) -> wc_error_t {
+                        if (!bstr) {
+                                return WC_ERROR_INVALID_ARGUMENT;
+                        }
+                        std::string str((const char*)bstr->data, (size_t)bstr->slen);
+                        g_terms[str] = now;
+                        return WC_SUCCESS;
+                },
+        };
+
+        // The internal implementation of wc_storage_enumerate_terms assumes
+        // that wc_db_terms_t is sufficiently smaller than wc_terms_t that the
+        // same buffer can be used for both and rewritten in-place.  This is a
+        // reasonable assumption, but just in case we check it here.
+        ASSERT_LT(sizeof(wc_db_terms_t) + sizeof(bstring), sizeof(wc_terms_t) + 1);
+
+        wc_storage_handle_t w = nullptr;
+        EXPECT_EQ(wc_storage_open(&w, &cb, nullptr, nullptr), WC_SUCCESS);
+        ASSERT_NE(w, nullptr);
+
+        std::vector<wc_terms_t> vec;
+        size_t count = 0;
+        int accepted = 0;
+
+        g_terms.clear();
+        ASSERT_EQ(g_terms.size(), 0);
+
+        vec.resize(1);
+        count = std::numeric_limits<size_t>::max();
+        EXPECT_EQ(wc_storage_enumerate_terms(w, nullptr, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wc_storage_enumerate_terms(w, vec.data(), nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wc_storage_enumerate_terms(w, nullptr, &count), WC_ERROR_INSUFFICIENT_CAPACITY);
+        EXPECT_EQ(count, 0); count = std::numeric_limits<size_t>::max();
+        EXPECT_EQ(wc_storage_enumerate_terms(w, vec.data(), &count), WC_SUCCESS);
+        EXPECT_EQ(count, 0);
+
+        accepted = -1;
+        EXPECT_EQ(wc_storage_have_accepted_terms(w, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wc_storage_have_accepted_terms(w, &accepted), WC_SUCCESS);
+        EXPECT_EQ(accepted, 0);
+
+        bstring bstr = cstr2bstr("foo");
+        ASSERT_NE(bstr, nullptr);
+        accepted = -1;
+        struct tm when = {0};
+        EXPECT_EQ(wc_storage_are_terms_accepted(w, &accepted, &when, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wc_storage_are_terms_accepted(w, nullptr, nullptr, bstr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wc_storage_are_terms_accepted(w, nullptr, &when, bstr), WC_SUCCESS);
+        EXPECT_EQ(wc_storage_are_terms_accepted(w, &accepted, nullptr, bstr), WC_SUCCESS);
+        EXPECT_EQ(accepted, 0);
+
+        EXPECT_EQ(wc_storage_accept_terms(w, nullptr, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wc_storage_accept_terms(w, bstr, nullptr), WC_SUCCESS);
+
+        count = std::numeric_limits<size_t>::max();
+        EXPECT_EQ(wc_storage_enumerate_terms(w, vec.data(), &count), WC_SUCCESS);
+        EXPECT_EQ(count, 1);
+        EXPECT_EQ(vec[0].text->slen, bstr->slen);
+        EXPECT_EQ(memcmp(vec[0].text->data, bstr->data, bstr->slen), 0);
+        EXPECT_EQ(biseq(vec[0].text, bstr), 1);
+
+        accepted = -1;
+        EXPECT_EQ(wc_storage_have_accepted_terms(w, &accepted), WC_SUCCESS);
+        EXPECT_EQ(accepted, 1);
+
+        accepted = -1;
+        EXPECT_EQ(wc_storage_are_terms_accepted(w, &accepted, nullptr, bstr), WC_SUCCESS);
+        EXPECT_EQ(accepted, 1);
+
+        accepted = -1;
+        bstr->data[1] = 'a';
+        EXPECT_EQ(wc_storage_are_terms_accepted(w, &accepted, nullptr, bstr), WC_SUCCESS);
+        EXPECT_EQ(accepted, 0);
+
+        EXPECT_EQ(wc_storage_close(w), WC_SUCCESS);
+}
+
 TEST(gtest, wc_server_connect) {
         wc_server_callbacks_t incompletecb = {};
         wc_server_callbacks_t cb = {

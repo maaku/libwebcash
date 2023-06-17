@@ -789,6 +789,124 @@ wc_error_t wc_storage_close(wc_storage_handle_t w) {
         return WC_SUCCESS;
 }
 
+wc_error_t wc_storage_enumerate_terms(
+        wc_storage_handle_t w,
+        wc_terms_t *terms,
+        size_t *count
+) {
+        wc_error_t e = WC_SUCCESS;
+        wc_db_terms_t *dbterms = (wc_db_terms_t*)terms;
+        size_t i = 0, j = 0;
+        if (!w || !count) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (!w->db) {
+                return WC_ERROR_DB_CLOSED;
+        }
+        if (!w->cb || !w->cb->all_terms) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        e = w->cb->all_terms(w->db, dbterms, count);
+        if (e == WC_SUCCESS && !terms) {
+                e = WC_ERROR_INSUFFICIENT_CAPACITY;
+        }
+        if (e != WC_SUCCESS) {
+                return e;
+        }
+        for (i = *count; i > 0;) {
+                --i; /* zero-based indexing */
+                terms[i].text = dbterms[i].text;
+                if (!gmtime_r(&dbterms[i].when, &terms[i].when)) {
+                        for (j = 0; j < i; ++j) {
+                                bdestroy(dbterms[j].text);
+                        }
+                        for (; j < *count; ++j) {
+                                bdestroy(terms[j].text);
+                        }
+                        return WC_ERROR_DB_CORRUPT;
+                }
+        }
+        return WC_SUCCESS;
+}
+
+wc_error_t wc_storage_have_accepted_terms(
+        wc_storage_handle_t w,
+        int *accepted
+) {
+        if (!w || !accepted) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (!w->db) {
+                return WC_ERROR_DB_CLOSED;
+        }
+        if (!w->cb || !w->cb->any_terms) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        return w->cb->any_terms(w->db, accepted);
+}
+
+wc_error_t wc_storage_are_terms_accepted(
+        wc_storage_handle_t w,
+        int *accepted,
+        struct tm *when,
+        bstring terms
+) {
+        wc_error_t e = WC_SUCCESS;
+        time_t t = 0;
+        if (!w || !terms || !(accepted || when)) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (!w->db) {
+                return WC_ERROR_DB_CLOSED;
+        }
+        if (!w->cb || !w->cb->terms_accepted) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        e = w->cb->terms_accepted(w->db, terms, &t);
+        if (e != WC_SUCCESS) {
+                return e;
+        }
+        if (when) {
+                if (t && !gmtime_r(&t, when)) {
+                        return WC_ERROR_DB_CORRUPT;
+                }
+        }
+        if (accepted) {
+                *accepted = (t != 0);
+        }
+        return WC_SUCCESS;
+}
+
+wc_error_t wc_storage_accept_terms(
+        wc_storage_handle_t w,
+        bstring terms,
+        struct tm *now
+) {
+        time_t t = 0;
+        if (!w || !terms) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (!w->db) {
+                return WC_ERROR_DB_CLOSED;
+        }
+        if (!w->cb || !w->cb->accept_terms) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (now) {
+                t = mktime(now);
+                if (t == (time_t)-1) {
+                        return WC_ERROR_INVALID_ARGUMENT;
+                }
+        } else {
+                t = time(NULL);
+                if (t == (time_t)-1) {
+                        /* The only reason time() might fail is integer overflow. */
+                        return WC_ERROR_OVERFLOW;
+                }
+        }
+        return w->cb->accept_terms(w->db, terms, t);
+}
+
 struct wc_server {
         const struct wc_server_callbacks *cb;
         wc_conn_handle_t conn;

@@ -78,12 +78,18 @@ typedef enum wc_error {
         WC_SUCCESS = 0,
         /** Invalid argument */
         WC_ERROR_INVALID_ARGUMENT,
+        /** Insufficient capacity */
+        WC_ERROR_INSUFFICIENT_CAPACITY,
         /** Out of memory */
         WC_ERROR_OUT_OF_MEMORY,
         /** Overflow */
         WC_ERROR_OVERFLOW,
+        /** Database closed */
+        WC_ERROR_DB_CLOSED,
         /** Database open failed */
         WC_ERROR_DB_OPEN_FAILED,
+        /** Database corrupt */
+        WC_ERROR_DB_CORRUPT,
         /** Recovery log open failed */
         WC_ERROR_LOG_OPEN_FAILED,
         /** Connection to server failed */
@@ -536,6 +542,26 @@ void wc_derive_serials(
         uint64_t start,
         size_t count);
 
+/**
+ * @brief The terms of service.
+ *
+ * The terms of service are UTF-8 encoded text documents that the user must
+ * accept before using the server or wallet APIs.  The terms are stored in the
+ * database upon acceptance, and compared against the server's terms when the
+ * wallet context is opened.  If the server's terms have changed since the
+ * last time the wallet was opened, the user must accept the new terms before
+ * continuing.
+ *
+ * The time at which the terms were accepted is also stored in the database,
+ * in the form of a wc_time_t value (seconds since WC_TIME_EPOCH).  For
+ * convenience, this value is converted into a standard struct tm value when
+ * returned by these storage interface APIs.
+ */
+typedef struct wc_terms {
+        struct tm when; /* UTC time zone */
+        bstring text; /* UTF-8 (text/plain) */
+} wc_terms_t;
+
 /*****************************************************************************
  * Storage interface (database and recovery log)
  *****************************************************************************/
@@ -545,6 +571,11 @@ typedef struct wc_log *wc_log_handle_t;
 typedef struct wc_log_url *wc_log_url_t;
 typedef struct wc_db *wc_db_handle_t;
 typedef struct wc_db_url *wc_db_url_t;
+
+typedef struct wc_db_terms {
+        wc_time_t when; /* sec since WC_TIME_EPOCH */
+        bstring text; /* UTF-8 (text/plain) */
+} wc_db_terms_t;
 
 /**
  * @brief Callbacks for interacting with data storage for the wallet,
@@ -556,6 +587,12 @@ typedef struct wc_storage_callbacks {
         void (*log_close)(wc_log_handle_t log); /* optional */
         wc_db_handle_t (*db_open)(wc_db_url_t dburl);
         void (*db_close)(wc_db_handle_t db); /* optional */
+
+        /* Terms of Service */
+        wc_error_t (*any_terms)(wc_db_handle_t db, int *any);
+        wc_error_t (*all_terms)(wc_db_handle_t db, wc_db_terms_t *terms, size_t *count);
+        wc_error_t (*terms_accepted)(wc_db_handle_t db, bstring terms, wc_time_t *when);
+        wc_error_t (*accept_terms)(wc_db_handle_t db, bstring terms, wc_time_t now);
 } wc_storage_callbacks_t;
 
 /* Implementation details of these structures are private to the library. */
@@ -602,6 +639,105 @@ wc_error_t wc_storage_open(
  * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
  */
 wc_error_t wc_storage_close(wc_storage_handle_t storage);
+
+/**
+ * @brief Returns all terms of service that have been accepted by the user.
+ *
+ * The terms are returned via the passed-in array of wc_terms_t structures,
+ * whose memory is managed by the caller.  The count parameter must initially
+ * contain the capacity of the array pointed to by terms, and is filled in
+ * with the actual number of terms returned.
+ *
+ * If the terms parameter is NULL or the capacity is insufficiently large
+ * enough, the function returns WC_ERROR_INSUFFICIENT_CAPACITY and the count
+ * parameter is filled in with the required capacity.
+ *
+ * @param storage The wallet storage interface.
+ * @param terms An array of wc_terms_t structures to be filled in with the
+ * terms of service accepted by the user.
+ * @param count The capacity of the terms array, initially, and the number of
+ * terms returned, on success.
+ * @return wc_error_t WC_SUCCESS if the terms of service were successfully
+ * stored in terms and count, WC_ERROR_INSUFFICIENT_CAPACITY if the passed-in
+ * capacity is insufficient, or an error code if there was an internal problem
+ * in performing this operation.
+ */
+wc_error_t wc_storage_enumerate_terms(
+        wc_storage_handle_t storage,
+        wc_terms_t *terms,
+        size_t *count);
+
+/**
+ * @brief Returns whether the user has accepted any version of the Webcash
+ * terms of service.
+ *
+ * In many cases it is sufficient to know whether the user has accepted any
+ * version of the terms of service, in particular if the user will not be
+ * interacting with the server (e.g. just querying the wallet balance from its
+ * own internal state).
+ *
+ * This API stores a non-zero value in the accepted parameter if the user has
+ * ever accepted any version of the terms of service, without checking if the
+ * terms of service are current, or zero otherwise.
+ *
+ * @param storage The wallet storage interface.
+ * @param accepted An out parameter to be filled in with a non-zero value if
+ * the user has accepted any version of the terms of service, or zero
+ * otherwise.  Only valid if the function returns WC_SUCCESS.
+ * @return wc_error_t WC_SUCCESS if the terms of service acceptance was
+ * successfully checked and the result stored in the out parameter accepted
+ * (even if the result was negatigve), or an error code otherwise.
+ */
+wc_error_t wc_storage_have_accepted_terms(
+        wc_storage_handle_t storage,
+        int *accepted);
+
+/**
+ * @brief Returns whether the user has accepted the passed-in version of the
+ * Webcash terms of service.
+ *
+ * The first step of connecting to the server is to fetch the current terms of
+ * service, and see if the user has accepted them.  This API is used for
+ * checking if the user has accepted a specific version of the terms of
+ * service, passed in as a text document.
+ *
+ * @param storage The wallet storage interface.
+ * @param accepted An out parameter to be filled in with a non-zero value if
+ * the user has accepted the passed-in terms of service, or zero otherwise.
+ * Only valid if the function returns WC_SUCCESS.
+ * @param when An out parameter to be filled in with the time at which the
+ * terms were accepted, if accepted is non-zero.  Only valid if the function
+ * returns WC_SUCCESS and accepted is non-zero.
+ * @param terms The specific text of the terms of service to be checked.
+ * @return wc_error_t WC_SUCCESS if the terms of service acceptance was
+ * successfully checked and the out parameters accepted and when have been
+ * filled, or an error code otherwise.
+ */
+wc_error_t wc_storage_are_terms_accepted(
+        wc_storage_handle_t storage,
+        int *accepted,
+        struct tm *when,
+        bstring terms);
+
+/**
+ * @brief Accept the passed-in terms of service.
+ *
+ * This API is used to accept the current terms of service, which are passed
+ * in as a text document.  The terms are stored in the database, along with
+ * the current time at which they were accepted.  If now is NULL, the current
+ * system time is used instead.
+ *
+ * @param storage The wallet storage interface.
+ * @param terms The specific text of the terms of service to be accepted.
+ * @param now The time at which the terms were accepted, or NULL to use the
+ * current system time.
+ * @return wc_error_t WC_SUCCESS if acceptance of the terms of service was
+ * successfully saved to the wallet storage, or an error code otherwise.
+ */
+wc_error_t wc_storage_accept_terms(
+        wc_storage_handle_t storage,
+        bstring terms,
+        struct tm *now);
 
 /*****************************************************************************
  * Server connection interface
