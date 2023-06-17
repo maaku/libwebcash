@@ -693,7 +693,7 @@ typedef struct wc_storage_callbacks {
         wc_error_t (*accept_terms)(wc_db_handle_t db, bstring terms, wc_time_t now);
 } wc_storage_callbacks_t;
 
-/* Implementation details of these structures are private to the library. */
+/* Implementation details of this structure is private to the library. */
 typedef struct wc_storage *wc_storage_handle_t;
 
 /**
@@ -854,7 +854,7 @@ typedef struct wc_server_callbacks {
         wc_error_t (*get_terms)(wc_conn_handle_t conn, bstring *terms);
 } wc_server_callbacks_t;
 
-/* Implementation details of these structures are private to the library. */
+/* Implementation details of this structure is private to the library. */
 typedef struct wc_server *wc_server_handle_t;
 
 /**
@@ -921,7 +921,7 @@ typedef struct wc_ui_callbacks {
         void (*shutdown)(wc_window_handle_t window);
 } wc_ui_callbacks_t;
 
-/* Implementation details of these structures are private to the library. */
+/* Implementation details of this structure is private to the library. */
 typedef struct wc_ui *wc_ui_handle_t;
 
 /**
