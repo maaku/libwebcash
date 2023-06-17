@@ -472,47 +472,68 @@ void wc_derive_serials(
         uint64_t start,
         size_t count);
 
-/* Implementation details of these structures are private to the library. */
-typedef struct wc_wallet *wc_wallet_handle_t;
-/* Implementation details of these strictires are specific to the client. */
-typedef struct wc_db *wc_db_handle_t;
+/* Implementation details of these structures are specific to the client. */
 typedef struct wc_log *wc_log_handle_t;
+typedef struct wc_log_url *wc_log_url_t;
+typedef struct wc_db *wc_db_handle_t;
+typedef struct wc_db_url *wc_db_url_t;
 
 /**
  * @brief Callbacks for interacting with data storage for the wallet,
  * including both a read-write database and an append-only recovery log.
  */
 typedef struct wc_storage_callbacks {
-        wc_log_handle_t (*log_open)(void *logurl);
+        /* Initialization */
+        wc_log_handle_t (*log_open)(wc_log_url_t logurl);
         void (*log_close)(wc_log_handle_t log); /* optional */
-        wc_db_handle_t (*db_open)(void *dburl);
+        wc_db_handle_t (*db_open)(wc_db_url_t dburl);
         void (*db_close)(wc_db_handle_t db); /* optional */
 } wc_storage_callbacks_t;
 
+/* Implementation details of these structures are private to the library. */
+typedef struct wc_storage *wc_storage_handle_t;
+
 /**
- * @brief Open a wallet.
+ * @brief Open storage for a wallet.
  *
- * @param wallet An out parameter to be filled in with a pointer to the
- * internal wallet state.  Only modified if the function returns WC_SUCCESS.
+ * Does whatever platform-specific initialization is required to open the
+ * wallet's storage interface, which includes both the database and recovery
+ * log.  The callbacks parameter is a pointer to a structure containing
+ * client-defined callbacks for interfacing with persistent data storage.
+
+ * The logurl and dburl parameters are client-defined connection strings for
+ * opening the log and database, respectively.  logurl will be passed to
+ * callbacks->log_open, and dburl will be passed to callbacks->db_open.  Both
+ * callbacks must return a non-NULL handle on success, or else wc_storage_open
+ * fails returning an error code.
+ *
+ * When no longer needed, the storage interface should be closed with
+ * wc_storage_close.
+ *
+ * @param storage An out parameter to be filled in with a pointer to the
+ * internal storage state.  Only modified if the function returns WC_SUCCESS.
  * @param callbacks A pointer to a structure containing client-configured
  * callbacks for interfacing with persistent data storage.
  * @param logurl Some client-defined path for opening a log file.
  * @param dburl Some client-defined connection string for opening a database.
- * @return wc_error_t WC_SUCCESS, WC_ERROR_INVALID_ARGUMENT, or
- * WC_ERROR_OUT_OF_MEMORY.
+ * @return wc_error_t WC_SUCCESS, WC_ERROR_INVALID_ARGUMENT,
+ * WC_ERROR_OUT_OF_MEMORY, WC_ERROR_LOG_OPEN_FAILED, or
+ * WC_ERROR_DB_OPEN_FAILED.
  */
-wc_error_t wc_wallet_open(wc_wallet_handle_t *wallet,
+wc_error_t wc_storage_open(
+        wc_storage_handle_t *storage,
         const wc_storage_callbacks_t *callbacks,
-        void *logurl,
-        void *dburl);
+        wc_log_url_t logurl,
+        wc_db_url_t dburl);
 
 /**
- * @brief Close a wallet, freeing all associated resources.
+ * @brief Close a wallet's storage interface, persisting data to disk and
+ * freeing all associated resources.
  *
- * @param wallet The wallet to close.
+ * @param storage The wallet file to close.
  * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
  */
-wc_error_t wc_wallet_close(wc_wallet_handle_t wallet);
+wc_error_t wc_storage_close(wc_storage_handle_t storage);
 
 #ifdef __cplusplus
 }

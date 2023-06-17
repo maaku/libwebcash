@@ -721,21 +721,21 @@ void wc_derive_serials(
         }
 }
 
-struct wc_wallet {
+struct wc_storage {
         const struct wc_storage_callbacks* cb;
         wc_db_handle_t db; /* the main wallet database */
         wc_log_handle_t log; /* append-only recovery log */
 };
 
-wc_error_t wc_wallet_open(
-        wc_wallet_handle_t *wallet,
-        const struct wc_storage_callbacks *callbacks,
-        void *logurl,
-        void *dburl
+wc_error_t wc_storage_open(
+        wc_storage_handle_t *storage,
+        const wc_storage_callbacks_t *callbacks,
+        wc_log_url_t logurl,
+        wc_db_url_t dburl
 ) {
-        wc_wallet_handle_t w = NULL;
+        wc_storage_handle_t w = NULL;
         /* Must have a way of returning the allocated wallet to the caller. */
-        if (!wallet) {
+        if (!storage) {
                 return WC_ERROR_INVALID_ARGUMENT;
         }
         /* A wallet requires both an active database connection and a recovery log.
@@ -743,12 +743,12 @@ wc_error_t wc_wallet_open(
         if (!callbacks || !callbacks->db_open || !callbacks->log_open) {
                 return WC_ERROR_INVALID_ARGUMENT;
         }
-        /* Allocate the wallet structure. */
-        w = malloc(sizeof(struct wc_wallet));
+        /* Allocate the wallet storage structure. */
+        w = malloc(sizeof(struct wc_storage));
         if (!w) {
                 return WC_ERROR_OUT_OF_MEMORY;
         }
-        /* Initialize the wallet structure. */
+        /* Initialize the wallet storage structure. */
         w->cb = callbacks;
         w->log = callbacks->log_open(logurl);
         if (!w->log) {
@@ -764,27 +764,28 @@ wc_error_t wc_wallet_open(
                 return WC_ERROR_DB_OPEN_FAILED;
         }
         /* Return the wallet structure. */
-        *wallet = w;
+        *storage = w;
         return WC_SUCCESS;
 }
 
-wc_error_t wc_wallet_close(wc_wallet_handle_t wallet) {
-        if (!wallet) {
+wc_error_t wc_storage_close(wc_storage_handle_t w) {
+        if (!w) {
                 return WC_ERROR_INVALID_ARGUMENT;
         }
-        if (wallet->db) {
-                if  (wallet->cb && wallet->cb->db_close) {
-                        wallet->cb->db_close(wallet->db);
+        if (w->db) {
+                if  (w->cb && w->cb->db_close) {
+                        w->cb->db_close(w->db);
                 }
-                wallet->db = NULL;
+                w->db = NULL;
         }
-        if (wallet->log) {
-                if (wallet->cb && wallet->cb->log_close) {
-                        wallet->cb->log_close(wallet->log);
+        if (w->log) {
+                if (w->cb && w->cb->log_close) {
+                        w->cb->log_close(w->log);
                 }
-                wallet->log = NULL;
+                w->log = NULL;
         }
-        free(wallet);
+        w->cb = NULL;
+        free(w);
         return WC_SUCCESS;
 }
 
