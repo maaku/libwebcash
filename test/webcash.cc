@@ -569,25 +569,27 @@ TEST(gtest, wc_server_connect) {
         EXPECT_EQ(wc_server_disconnect(c), WC_SUCCESS);
 }
 
+std::string g_terms_of_service = "foo";
+wc_server_callbacks_t g_server_callbacks = {
+        .connect = [](wc_server_url_t url) -> wc_conn_handle_t {
+                return (wc_conn_handle_t)1;
+        },
+        .get_terms = [](wc_conn_handle_t conn, bstring *terms) -> wc_error_t {
+                if (!terms) {
+                        return WC_ERROR_INVALID_ARGUMENT;
+                }
+                bstring bstr = blk2bstr(g_terms_of_service.c_str(), g_terms_of_service.size());
+                if (!bstr) {
+                        return WC_ERROR_OUT_OF_MEMORY;
+                }
+                *terms = bstr;
+                return WC_SUCCESS;
+        },
+};
+
 TEST(gtest, wc_server_terms) {
-        wc_server_callbacks_t cb = {
-                .connect = [](wc_server_url_t url) -> wc_conn_handle_t {
-                        return (wc_conn_handle_t)1;
-                },
-                .get_terms = [](wc_conn_handle_t conn, bstring *terms) -> wc_error_t {
-                        if (!terms) {
-                                return WC_ERROR_INVALID_ARGUMENT;
-                        }
-                        bstring bstr = cstr2bstr("foo");
-                        if (!bstr) {
-                                return WC_ERROR_OUT_OF_MEMORY;
-                        }
-                        *terms = bstr;
-                        return WC_SUCCESS;
-                },
-        };
         wc_server_handle_t c = nullptr;
-        EXPECT_EQ(wc_server_connect(&c, &cb, nullptr), WC_SUCCESS);
+        EXPECT_EQ(wc_server_connect(&c, &g_server_callbacks, nullptr), WC_SUCCESS);
         ASSERT_NE(c, nullptr);
         EXPECT_EQ(wc_server_get_terms(c, nullptr), WC_ERROR_INVALID_ARGUMENT);
         bstring terms = nullptr;
