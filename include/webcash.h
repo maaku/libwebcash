@@ -79,7 +79,8 @@ typedef enum wc_error {
         WC_ERROR_OUT_OF_MEMORY = -2,    /**< Out of memory */
         WC_ERROR_OVERFLOW = -3,         /**< Overflow */
         WC_ERROR_DB_OPEN_FAILED = -4,   /**< Database open failed */
-        WC_ERROR_LOG_OPEN_FAILED = -5   /**< Recovery log open failed */
+        WC_ERROR_LOG_OPEN_FAILED = -5,  /**< Recovery log open failed */
+        WC_ERROR_CONNECT_FAILED = -6    /**< Connection to server failed */
 } wc_error_t;
 
 /**
@@ -592,6 +593,56 @@ wc_error_t wc_storage_open(
  * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
  */
 wc_error_t wc_storage_close(wc_storage_handle_t storage);
+
+/*****************************************************************************
+ * Server connection interface
+ *****************************************************************************/
+
+/* Implementation details of these structures are specific to the client. */
+typedef struct wc_conn *wc_conn_handle_t;
+typedef struct wc_server_url *wc_server_url_t;
+
+typedef struct wc_server_callbacks {
+        /* Initialization */
+        wc_conn_handle_t (*connect)(wc_server_url_t url);
+        void (*disconnect)(wc_conn_handle_t conn);
+} wc_server_callbacks_t;
+
+/* Implementation details of these structures are private to the library. */
+typedef struct wc_server *wc_server_handle_t;
+
+/**
+ * @brief Open a connection to the webcash server.
+ *
+ * This API is optimistically named "connect" but it may not actually initiate
+ * a connection.  The simplest implementation would merely set up callbacks
+ * for the server object, and records the server URL.
+ *
+ * With upstream server support it is possible that some implementations may
+ * actually open a long-lived connection to the server that can be reused for
+ * multiple queries.
+ *
+ * @param server The server object to be filled in.
+ * @param callbacks The callbacks to be used for interacting with the server.
+ * @param url The URL of the server to connect to.
+ * @return wc_error_t WC_SUCCESS if the server object was successfully
+ * initialized, or an error code otherwise.
+ */
+wc_error_t wc_server_connect(
+        wc_server_handle_t *server,
+        const wc_server_callbacks_t *callbacks,
+        wc_server_url_t url);
+
+/**
+ * @brief Close a connection to the webcash server.
+ *
+ * Tears down any open connections to the server, and frees any resources
+ * associated with the server object.
+ *
+ * @param server The server object to be closed.
+ * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
+ */
+wc_error_t wc_server_disconnect(wc_server_handle_t server);
 
 #ifdef __cplusplus
 }

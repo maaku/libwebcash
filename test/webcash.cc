@@ -414,6 +414,33 @@ TEST(gtest, wc_storage_open_close) {
         EXPECT_EQ(wc_storage_close(w), WC_SUCCESS);
 }
 
+TEST(gtest, wc_server_connect) {
+        wc_server_callbacks_t incompletecb = {};
+        wc_server_callbacks_t cb = {
+                .connect = [](wc_server_url_t url) -> wc_conn_handle_t {
+                        return (wc_conn_handle_t)nullptr;
+                },
+        };
+        wc_server_handle_t c = nullptr;
+        EXPECT_EQ(wc_server_connect(nullptr, nullptr, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(c, nullptr);
+        EXPECT_EQ(wc_server_connect(&c, nullptr, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(c, nullptr);
+        EXPECT_EQ(wc_server_connect(nullptr, &cb, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(c, nullptr);
+        EXPECT_EQ(wc_server_connect(&c, &incompletecb, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(c, nullptr);
+        EXPECT_EQ(wc_server_connect(&c, &cb, nullptr), WC_ERROR_CONNECT_FAILED);
+        EXPECT_EQ(c, nullptr);
+        cb.connect = [](wc_server_url_t url) -> wc_conn_handle_t {
+                return (wc_conn_handle_t)1;
+        };
+        EXPECT_EQ(wc_server_connect(&c, &cb, nullptr), WC_SUCCESS);
+        ASSERT_NE(c, nullptr);
+        EXPECT_EQ(wc_server_disconnect(nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wc_server_disconnect(c), WC_SUCCESS);
+}
+
 int main(int argc, char **argv) {
         ::testing::InitGoogleTest(&argc, argv);
         assert(wc_init() == WC_SUCCESS);

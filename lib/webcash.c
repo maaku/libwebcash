@@ -789,5 +789,56 @@ wc_error_t wc_storage_close(wc_storage_handle_t w) {
         return WC_SUCCESS;
 }
 
+struct wc_server {
+        const struct wc_server_callbacks *cb;
+        wc_conn_handle_t conn;
+};
+
+wc_error_t wc_server_connect(
+        wc_server_handle_t *server,
+        const wc_server_callbacks_t *callbacks,
+        wc_server_url_t url
+) {
+        wc_server_handle_t c = NULL;
+        /* Must have a way of returning the allocated server connection to the caller. */
+        if (!server) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        /* A server object without a server connection is pretty useless. */
+        if (!callbacks || !callbacks->connect) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        /* Allocate the server object structure. */
+        c = malloc(sizeof(struct wc_server));
+        if (!c) {
+                return WC_ERROR_OUT_OF_MEMORY;
+        }
+        /* Initialize the server object structure. */
+        c->cb = callbacks;
+        c->conn = callbacks->connect(url);
+        if (!c->conn) {
+                free(c);
+                return WC_ERROR_CONNECT_FAILED;
+        }
+        /* Return the server object structure. */
+        *server = c;
+        return WC_SUCCESS;
+}
+
+wc_error_t wc_server_disconnect(wc_server_handle_t c) {
+        if (!c) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (c->conn) {
+                if  (c->cb && c->cb->disconnect) {
+                        c->cb->disconnect(c->conn);
+                }
+                c->conn = NULL;
+        }
+        c->cb = NULL;
+        free(c);
+        return WC_SUCCESS;
+}
+
 /* End of File
  */
