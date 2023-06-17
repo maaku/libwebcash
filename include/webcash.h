@@ -225,6 +225,38 @@ bstring wc_to_bstring(wc_amount_t amount);
 typedef struct wc_secret {
         wc_amount_t amount;
         bstring serial;
+#ifdef __cplusplus
+        wc_secret() : amount(WC_ZERO), serial(nullptr) {}
+        wc_secret(const wc_secret &other) : amount(other.amount), serial(bstrcpy(other.serial)) {
+                if (serial == nullptr) {
+                        throw std::bad_alloc();
+                }
+        }
+        wc_secret(wc_secret &&other) : amount(other.amount), serial(other.serial) {
+                if (this != &other) {
+                        other.serial = nullptr;
+                }
+        }
+        wc_secret& operator=(const wc_secret &other) {
+                if (this != &other) {
+                        amount = other.amount;
+                        bassign(serial, other.serial);
+                }
+                return *this;
+        }
+        wc_secret& operator=(wc_secret &&other) {
+                if (this != &other) {
+                        amount = other.amount;
+                        serial = other.serial;
+                        other.serial = nullptr;
+                }
+                return *this;
+        }
+        ~wc_secret() {
+                bdestroy(serial);
+                serial = nullptr;
+        }
+#endif
 } wc_secret_t;
 
 /**
@@ -560,6 +592,38 @@ void wc_derive_serials(
 typedef struct wc_terms {
         struct tm when; /* UTC time zone */
         bstring text; /* UTF-8 (text/plain) */
+#ifdef __cplusplus
+        wc_terms() : when{0}, text(nullptr) {}
+        wc_terms(const wc_terms &other) : when(other.when), text(bstrcpy(other.text)) {
+                if (text == nullptr) {
+                        throw std::bad_alloc();
+                }
+        }
+        wc_terms(wc_terms &&other) : when(other.when), text(other.text) {
+                if (this != &other) {
+                        other.text = nullptr;
+                }
+        }
+        wc_terms& operator=(const wc_terms &other) {
+                if (this != &other) {
+                        when = other.when;
+                        bassign(text, other.text);
+                }
+                return *this;
+        }
+        wc_terms& operator=(wc_terms &&other) {
+                if (this != &other) {
+                        when = other.when;
+                        text = other.text;
+                        other.text = nullptr;
+                }
+                return *this;
+        }
+        ~wc_terms() {
+                bdestroy(text);
+                text = nullptr;
+        }
+#endif
 } wc_terms_t;
 
 /*****************************************************************************
@@ -575,6 +639,38 @@ typedef struct wc_db_url *wc_db_url_t;
 typedef struct wc_db_terms {
         wc_time_t when; /* sec since WC_TIME_EPOCH */
         bstring text; /* UTF-8 (text/plain) */
+#ifdef __cplusplus
+        wc_db_terms() : when{0}, text(nullptr) {}
+        wc_db_terms(const wc_db_terms &other) : when(other.when), text(bstrcpy(other.text)) {
+                if (text == nullptr) {
+                        throw std::bad_alloc();
+                }
+        }
+        wc_db_terms(wc_db_terms &&other) : when(other.when), text(other.text) {
+                if (this != &other) {
+                        other.text = nullptr;
+                }
+        }
+        wc_db_terms& operator=(const wc_db_terms &other) {
+                if (this != &other) {
+                        when = other.when;
+                        bassign(text, other.text);
+                }
+                return *this;
+        }
+        wc_db_terms& operator=(wc_db_terms &&other) {
+                if (this != &other) {
+                        when = other.when;
+                        text = other.text;
+                        other.text = nullptr;
+                }
+                return *this;
+        }
+        ~wc_db_terms() {
+                bdestroy(text);
+                text = nullptr;
+        }
+#endif
 } wc_db_terms_t;
 
 /**

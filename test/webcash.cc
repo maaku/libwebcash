@@ -84,7 +84,7 @@ TEST(gtest, wc_from_string) {
 }
 
 TEST(gtest, wc_secret_new) {
-        wc_secret_t secret = {0};
+        wc_secret_t secret;
         EXPECT_EQ(wc_secret_is_valid(&secret), WC_ERROR_INVALID_ARGUMENT);
         ASSERT_EQ(wc_secret_new(&secret), WC_SUCCESS);
         EXPECT_EQ(secret.amount, WC_ZERO);
@@ -97,7 +97,7 @@ TEST(gtest, wc_secret_new) {
 }
 
 TEST(gtest, wc_secret_from_cstring) {
-        wc_secret_t secret = {0};
+        wc_secret_t secret;
         EXPECT_EQ(wc_secret_is_valid(&secret), WC_ERROR_INVALID_ARGUMENT);
         ASSERT_EQ(wc_secret_from_cstring(&secret, INT64_C(1), "abc"), WC_SUCCESS);
         EXPECT_EQ(secret.amount, INT64_C(1));
@@ -109,7 +109,7 @@ TEST(gtest, wc_secret_from_cstring) {
 }
 
 TEST(gtest, wc_secret_from_bstring) {
-        wc_secret_t secret = {0};
+        wc_secret_t secret;
         bstring bstr = nullptr;
         unsigned char *cstr = nullptr;
         bstr = bfromcstr("abc");
@@ -127,7 +127,7 @@ TEST(gtest, wc_secret_from_bstring) {
 }
 
 TEST(gtest, wc_secret_from_bstring_copy) {
-        wc_secret_t secret = {0};
+        wc_secret_t secret;
         bstring bstr = nullptr;
         bstr = bfromcstr("abc");
         ASSERT_NE(bstr, nullptr);
@@ -145,7 +145,7 @@ TEST(gtest, wc_secret_from_bstring_copy) {
 }
 
 TEST(gtest, wc_secret_is_valid) {
-        wc_secret_t secret = {0};
+        wc_secret_t secret;
         /* Must pass in a secret value. */
         EXPECT_EQ(wc_secret_is_valid(nullptr), WC_ERROR_INVALID_ARGUMENT);
         /* Zero-initialized secret has both .amount and .serial invalid. */
@@ -172,7 +172,7 @@ TEST(gtest, wc_secret_is_valid) {
 }
 
 TEST(gtest, wc_secret_destroy) {
-        wc_secret_t secret = {0};
+        wc_secret_t secret;
         EXPECT_EQ(wc_secret_destroy(&secret), WC_ERROR_INVALID_ARGUMENT);
         EXPECT_EQ(secret.serial, nullptr);
         EXPECT_EQ(wc_secret_new(&secret), WC_SUCCESS);
@@ -191,7 +191,7 @@ TEST(gtest, wc_secret_destroy) {
 }
 
 TEST(gtest, wc_secret_string) {
-        wc_secret_t secret = {0};
+        wc_secret_t secret;
         bstring bstr = nullptr;
         int noncanonical = -1;
         ASSERT_EQ(wc_secret_from_cstring(nullptr, INT64_C(1234567800), "abc"), WC_ERROR_INVALID_ARGUMENT);
@@ -220,7 +220,7 @@ TEST(gtest, wc_public_init) {
 }
 
 TEST(gtest, wc_public_from_secret) {
-        wc_secret_t secret = {0};
+        wc_secret_t secret;
         wc_public_t pub = WC_PUBLIC_INIT;
         struct sha256 hash = { /* sha256(b"abc").digest() */
                 0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea,
