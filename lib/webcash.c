@@ -1042,5 +1042,71 @@ wc_error_t wc_ui_show_terms(
         return ui->cb->show_terms(ui->hwnd, accepted, terms);
 }
 
+struct wc_wallet {
+        wc_storage_handle_t storage;
+        wc_server_handle_t server;
+        wc_ui_handle_t ui;
+        int tos;
+};
+
+wc_error_t wc_wallet_configure(
+        wc_wallet_handle_t *wallet,
+        wc_storage_handle_t storage,
+        wc_server_handle_t server,
+        wc_ui_handle_t ui
+) {
+        wc_wallet_handle_t ctx = NULL;
+        /* Must have a way of returning the allocated wallet to the caller. */
+        if (!wallet) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        /* A wallet object without storage is pretty useless. */
+        if (!storage) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        /* A wallet object without a server connection is pretty useless. */
+        if (!server) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        /* A wallet object without a user interface is pointless. */
+        if (!ui) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        /* Allocate the wallet object structure. */
+        ctx = malloc(sizeof(struct wc_wallet));
+        if (!ctx) {
+                return WC_ERROR_OUT_OF_MEMORY;
+        }
+        /* Initialize the wallet object structure. */
+        ctx->storage = storage;
+        ctx->server = server;
+        ctx->ui = ui;
+        ctx->tos = 0;
+        /* Return the wallet object structure. */
+        *wallet = ctx;
+        return WC_SUCCESS;
+}
+
+wc_error_t wc_wallet_release(wc_wallet_handle_t wallet) {
+        wc_error_t e = WC_SUCCESS;
+        if (!wallet) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (wallet->ui) {
+                e = e || wc_ui_shutdown(wallet->ui);
+                wallet->ui = NULL;
+        }
+        if (wallet->server) {
+                e = e || wc_server_disconnect(wallet->server);
+                wallet->server = NULL;
+        }
+        if (wallet->storage) {
+                e = e || wc_storage_close(wallet->storage);
+                wallet->storage = NULL;
+        }
+        free(wallet);
+        return e;
+}
+
 /* End of File
  */

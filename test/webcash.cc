@@ -661,6 +661,57 @@ TEST(gtest, wc_ui_terms) {
         EXPECT_EQ(wc_ui_shutdown(ui), WC_SUCCESS);
 }
 
+TEST(gtest, wc_wallet_configure) {
+        wc_storage_handle_t storage = nullptr;
+        wc_server_handle_t server = nullptr;
+        wc_ui_handle_t ui = nullptr;
+        wc_wallet_handle_t wallet = nullptr;
+        EXPECT_EQ(wc_storage_open(&storage, &g_storage_callbacks, nullptr, nullptr), WC_SUCCESS);
+        ASSERT_NE(storage, nullptr);
+        EXPECT_EQ(wc_server_connect(&server, &g_server_callbacks, nullptr), WC_SUCCESS);
+        ASSERT_NE(server, nullptr);
+        EXPECT_EQ(wc_ui_startup(&ui, &g_ui_callbacks, nullptr), WC_SUCCESS);
+        ASSERT_NE(ui, nullptr);
+        EXPECT_EQ(wc_wallet_configure(nullptr, nullptr, nullptr, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wallet, nullptr);
+        EXPECT_EQ(wc_wallet_configure(&wallet, nullptr, nullptr, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wallet, nullptr);
+        EXPECT_EQ(wc_wallet_configure(&wallet, storage, nullptr, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wallet, nullptr);
+        EXPECT_EQ(wc_wallet_configure(&wallet, nullptr, server, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wallet, nullptr);
+        EXPECT_EQ(wc_wallet_configure(&wallet, storage, server, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wallet, nullptr);
+        EXPECT_EQ(wc_wallet_configure(&wallet, nullptr, nullptr, ui), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wallet, nullptr);
+        EXPECT_EQ(wc_wallet_configure(&wallet, storage, nullptr, ui), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wallet, nullptr);
+        EXPECT_EQ(wc_wallet_configure(&wallet, nullptr, server, ui), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wallet, nullptr);
+
+        g_terms.clear();
+        g_should_accept_terms = false;
+        EXPECT_EQ(wc_wallet_configure(&wallet, storage, server, ui), WC_SUCCESS);
+        ASSERT_NE(wallet, nullptr);
+        EXPECT_EQ(g_terms.size(), 0);
+        EXPECT_EQ(wc_wallet_release(nullptr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wc_wallet_release(wallet), WC_SUCCESS);
+
+        // Terms of service are not checked on configuration.
+        g_terms.clear();
+        g_should_accept_terms = true;
+        EXPECT_EQ(wc_storage_open(&storage, &g_storage_callbacks, nullptr, nullptr), WC_SUCCESS);
+        ASSERT_NE(storage, nullptr);
+        EXPECT_EQ(wc_server_connect(&server, &g_server_callbacks, nullptr), WC_SUCCESS);
+        ASSERT_NE(server, nullptr);
+        EXPECT_EQ(wc_ui_startup(&ui, &g_ui_callbacks, nullptr), WC_SUCCESS);
+        ASSERT_NE(ui, nullptr);
+        EXPECT_EQ(wc_wallet_configure(&wallet, storage, server, ui), WC_SUCCESS);
+        ASSERT_NE(wallet, nullptr);
+        EXPECT_EQ(g_terms.size(), 0);
+        EXPECT_EQ(wc_wallet_release(wallet), WC_SUCCESS);
+}
+
 int main(int argc, char **argv) {
         ::testing::InitGoogleTest(&argc, argv);
         assert(wc_init() == WC_SUCCESS);

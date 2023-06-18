@@ -983,6 +983,47 @@ wc_error_t wc_ui_show_terms(
         int *accepted,
         bstring terms);
 
+/*****************************************************************************
+ * Wallet context interface
+ *****************************************************************************/
+
+/* Implementation details of this structure is private to the library. */
+typedef struct wc_wallet *wc_wallet_handle_t;
+
+/**
+ * @brief Setup the wallet context.
+ *
+ * This API is used to initialize the wallet context, which is used to
+ * coordinate the user interface, the wallet storage, and the server
+ * connection.
+ *
+ * The wallet context takes ownership of the passed in storage, server, and ui
+ * interfaces.  The caller should not use these interfaces after passing them
+ * to this function, nor should the caller attempt to free them.
+ *
+ * @param wallet An out parameter to be filled in with the wallet context.
+ * @param storage The wallet storage interface.
+ * @param server The server connection object.
+ * @param ui The user interface object.
+ * @return wc_error_t WC_SUCCESS or WC_ERROR_OUT_OF_MEMORY.
+ */
+wc_error_t wc_wallet_configure(
+        wc_wallet_handle_t *wallet,
+        wc_storage_handle_t storage,
+        wc_server_handle_t server,
+        wc_ui_handle_t ui);
+
+/**
+ * @brief Shut down the wallet context.
+ *
+ * Tears down any open windows, closes any open connections, and frees any
+ * resources associated with the wallet context.
+ *
+ * @param wallet The wallet context to be shut down.
+ * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
+ */
+wc_error_t wc_wallet_release(wc_wallet_handle_t wallet);
+
 #ifdef __cplusplus
 }
 #endif
