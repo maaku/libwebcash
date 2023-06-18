@@ -569,7 +569,7 @@ TEST(gtest, wc_server_connect) {
         EXPECT_EQ(wc_server_disconnect(c), WC_SUCCESS);
 }
 
-std::string g_terms_of_service = "foo";
+std::string g_terms_of_service = "Terms of Service";
 wc_server_callbacks_t g_server_callbacks = {
         .connect = [](wc_server_url_t url) -> wc_conn_handle_t {
                 return (wc_conn_handle_t)1;
@@ -595,9 +595,9 @@ TEST(gtest, wc_server_terms) {
         bstring terms = nullptr;
         EXPECT_EQ(wc_server_get_terms(c, &terms), WC_SUCCESS);
         ASSERT_NE(terms, nullptr);
-        EXPECT_EQ(terms->slen, 3);
-        EXPECT_EQ(memcmp(terms->data, "foo", 3), 0);
-        EXPECT_EQ(biseqcstr(terms, "foo"), 1);
+        EXPECT_EQ(terms->slen, g_terms_of_service.size());
+        EXPECT_EQ(memcmp(terms->data, g_terms_of_service.c_str(), g_terms_of_service.size()), 0);
+        EXPECT_EQ(biseqcstr(terms, g_terms_of_service.c_str()), 1);
         EXPECT_EQ(wc_server_disconnect(c), WC_SUCCESS);
 }
 
