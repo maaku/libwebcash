@@ -1053,7 +1053,9 @@ struct wc_wallet {
         wc_storage_handle_t storage;
         wc_server_handle_t server;
         wc_ui_handle_t ui;
-        int tos;
+        bstring terms;
+        int accepted;
+        struct tm terms_tm;
 };
 
 wc_error_t wc_wallet_configure(
@@ -1088,7 +1090,9 @@ wc_error_t wc_wallet_configure(
         ctx->storage = storage;
         ctx->server = server;
         ctx->ui = ui;
-        ctx->tos = 0;
+        ctx->terms = NULL;
+        ctx->accepted = 0;
+        memset(&ctx->terms_tm, 0, sizeof(struct tm));
         /* Return the wallet object structure. */
         *wallet = ctx;
         return WC_SUCCESS;
@@ -1098,6 +1102,10 @@ wc_error_t wc_wallet_release(wc_wallet_handle_t wallet) {
         wc_error_t e = WC_SUCCESS;
         if (!wallet) {
                 return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (wallet->terms) {
+                bdestroy(wallet->terms);
+                wallet->terms = NULL;
         }
         if (wallet->ui) {
                 e = e || wc_ui_shutdown(wallet->ui);
@@ -1113,6 +1121,80 @@ wc_error_t wc_wallet_release(wc_wallet_handle_t wallet) {
         }
         free(wallet);
         return e;
+}
+
+wc_error_t wc_wallet_terms_of_service(
+        wc_wallet_handle_t wallet,
+        bstring *terms,
+        int *accepted,
+        struct tm *when
+) {
+        wc_error_t e = WC_SUCCESS;
+        time_t now = 0;
+        /* Need a wallet context. */
+        if (!wallet) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        /* Fetch the current terms of service from the server. */
+        if (!wallet->terms) {
+                e = wc_server_get_terms(wallet->server, &wallet->terms);
+                if (e == WC_SUCCESS && !wallet->terms) {
+                        /* wc_server_get_terms should have returned an error code */
+                        e = WC_ERROR_UNKNOWN;
+                }
+                if (e != WC_SUCCESS) {
+                        return e;
+                }
+                /* Clear acceptance cache. */
+                wallet->accepted = 0;
+                memset(&wallet->terms_tm, 0, sizeof(struct tm));
+        }
+        /* Check if the user previously accepted these terms. */
+        if (!wallet->accepted) {
+                e = wc_storage_are_terms_accepted(wallet->storage, &wallet->accepted, &wallet->terms_tm, wallet->terms);
+                if (e != WC_SUCCESS) {
+                        return e;
+                }
+        }
+        /* If the terms have not been accepted, show them to the user. */
+        if (!wallet->accepted) {
+                /* Show the terms of service to the user. */
+                e = wc_ui_show_terms(wallet->ui, &wallet->accepted, wallet->terms);
+                if (e != WC_SUCCESS) {
+                        return e;
+                }
+                /* If the user has accepted the terms, cache the acceptance. */
+                if (wallet->accepted) {
+                        now = time(NULL);
+                        if (!gmtime_r(&now, &wallet->terms_tm)) {
+                                return WC_ERROR_OVERFLOW;
+                        }
+                        /* If the following call fails, then the terms of
+                         * service acceptance was not saved to the wallet
+                         * storage.  This is bad, but not a show stopper.
+                         * The terms will just be displayed again the next
+                         * time the wallet starts. */
+                        wc_storage_accept_terms(wallet->storage, wallet->terms, &wallet->terms_tm);
+                }
+        }
+        /* If the terms have already been accepted, return cached values. */
+        if (terms) {
+                if (*terms) {
+                        bdestroy(*terms);
+                        *terms = NULL;
+                }
+                *terms = bstrcpy(wallet->terms);
+                if (!*terms) {
+                        return WC_ERROR_OUT_OF_MEMORY;
+                }
+        }
+        if (accepted) {
+                *accepted = wallet->accepted;
+        }
+        if (when && wallet->accepted) {
+                memcpy(when, &wallet->terms_tm, sizeof(struct tm));
+        }
+        return WC_SUCCESS;
 }
 
 /* End of File

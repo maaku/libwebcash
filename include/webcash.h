@@ -99,7 +99,9 @@ typedef enum wc_error {
         /** No user interface online */
         WC_ERROR_HEADLESS,
         /** User interface startup failed */
-        WC_ERROR_STARTUP_FAILED
+        WC_ERROR_STARTUP_FAILED,
+        /** Unknown error.  Should never happen! */
+        WC_ERROR_UNKNOWN
 } wc_error_t;
 
 /**
@@ -1023,6 +1025,49 @@ wc_error_t wc_wallet_configure(
  * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
  */
 wc_error_t wc_wallet_release(wc_wallet_handle_t wallet);
+
+/**
+ * @brief Ensure the user has accepted the Webcash terms of service.
+ *
+ * Fetches the current Webcash terms of service from the server, checks if the
+ * user has accepted this version of the terms, and if not, shows the terms to
+ * the user and records their response.
+ *
+ * A return value of WC_SUCCESS indicates successful execution of this API,
+ * not acceptance of the terms of service.  For that you must check the output
+ * parameters.  accepted will be set to 1 if the user previously accepted the
+ * current Webcash terms of service, or if the the terms were presented to the
+ * user at this time and the user clicked "Agree."  If the user explicitly
+ * rejects the terms of service, or performs any action (e.g. closing the
+ * prompt window) which cannot be construed as acceptance, then the return
+ * value will still be WC_SUCCESS, but accepted will be 0.
+ *
+ * Rejection is not permanent: calling this API multiple times will result in
+ * multiple UI prompts until the current terms of service are accepted.
+ *
+ * Other return values are possible, and indicate an error condition.
+ *
+ * @param wallet A connected wallet context.
+ * @param terms An out parameter to be filled in with the current terms of
+ * service.  Only valid if the function returns WC_SUCCESS.
+ * @param accepted An out parameter to be filled in with the user's response
+ * to the terms of service (non-zero indicates acceptance).  Only valid if the
+ * function returns WC_SUCCESS.
+ * @param when An out parameter to be filled in with the time (possibly in the
+ * past) at which the terms of service were accepted.  Only valid if the
+ * function returns WC_SUCCESS.
+ * @return wc_error_t WC_SUCCESS if the output parameters have been filled.
+ * WC_SUCCESS does not mean the terms of service were accepted, but rather
+ * that the terms of service had already been accepted and stored in the
+ * wallet, or the user interface was successfully shown and the user's yes/no
+ * response was recorded.  Other error codes are possible, and indicate an
+ * error condition.
+ */
+wc_error_t wc_wallet_terms_of_service(
+        wc_wallet_handle_t wallet,
+        bstring *terms,
+        int *accepted,
+        struct tm *when);
 
 #ifdef __cplusplus
 }

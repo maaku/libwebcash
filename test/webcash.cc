@@ -712,6 +712,65 @@ TEST(gtest, wc_wallet_configure) {
         EXPECT_EQ(wc_wallet_release(wallet), WC_SUCCESS);
 }
 
+TEST(gtest, wc_wallet_terms_of_service) {
+        wc_storage_handle_t storage = nullptr;
+        wc_server_handle_t server = nullptr;
+        wc_ui_handle_t ui = nullptr;
+        wc_wallet_handle_t wallet = nullptr;
+
+        bstring terms = nullptr;
+        int accepted = -1;
+        struct tm when, tm_zero;
+        memset(&tm_zero, 0, sizeof(tm_zero));
+        when = tm_zero;
+
+        EXPECT_EQ(wc_storage_open(&storage, &g_storage_callbacks, nullptr, nullptr), WC_SUCCESS);
+        ASSERT_NE(storage, nullptr);
+        EXPECT_EQ(wc_server_connect(&server, &g_server_callbacks, nullptr), WC_SUCCESS);
+        ASSERT_NE(server, nullptr);
+        EXPECT_EQ(wc_ui_startup(&ui, &g_ui_callbacks, nullptr), WC_SUCCESS);
+        ASSERT_NE(ui, nullptr);
+
+        g_terms.clear();
+        g_should_accept_terms = false;
+        EXPECT_EQ(wc_wallet_configure(&wallet, storage, server, ui), WC_SUCCESS);
+        ASSERT_NE(wallet, nullptr);
+        EXPECT_EQ(g_terms.size(), 0);
+        EXPECT_EQ(wc_wallet_terms_of_service(wallet, &terms, &accepted, &when), WC_SUCCESS);
+        EXPECT_EQ(g_terms.size(), 0);
+        EXPECT_NE(terms, nullptr);
+        if (terms) {
+                EXPECT_EQ(biseqcstr(terms, g_terms_of_service.c_str()), 1);
+        }
+        EXPECT_EQ(accepted, 0);
+        EXPECT_EQ(memcmp(&when, &tm_zero, sizeof(when)), 0);
+        EXPECT_EQ(wc_wallet_release(wallet), WC_SUCCESS);
+
+        EXPECT_EQ(wc_storage_open(&storage, &g_storage_callbacks, nullptr, nullptr), WC_SUCCESS);
+        ASSERT_NE(storage, nullptr);
+        EXPECT_EQ(wc_server_connect(&server, &g_server_callbacks, nullptr), WC_SUCCESS);
+        ASSERT_NE(server, nullptr);
+        EXPECT_EQ(wc_ui_startup(&ui, &g_ui_callbacks, nullptr), WC_SUCCESS);
+        ASSERT_NE(ui, nullptr);
+
+        g_terms.clear();
+        g_should_accept_terms = true;
+        EXPECT_EQ(wc_wallet_configure(&wallet, storage, server, ui), WC_SUCCESS);
+        ASSERT_NE(wallet, nullptr);
+        EXPECT_EQ(g_terms.size(), 0);
+        EXPECT_EQ(wc_wallet_terms_of_service(wallet, &terms, &accepted, &when), WC_SUCCESS);
+        EXPECT_EQ(g_terms.size(), 1);
+        EXPECT_EQ(g_terms.begin()->first, g_terms_of_service);
+        EXPECT_EQ(g_terms.begin()->second, mktime(&when) - WC_TIME_EPOCH);
+        EXPECT_NE(terms, nullptr);
+        if (terms) {
+                EXPECT_EQ(biseqcstr(terms, g_terms_of_service.c_str()), 1);
+        }
+        EXPECT_EQ(accepted, 1);
+        EXPECT_NE(memcmp(&when, &tm_zero, sizeof(when)), 0);
+        EXPECT_EQ(wc_wallet_release(wallet), WC_SUCCESS);
+}
+
 int main(int argc, char **argv) {
         ::testing::InitGoogleTest(&argc, argv);
         assert(wc_init() == WC_SUCCESS);
