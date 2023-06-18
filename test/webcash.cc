@@ -628,6 +628,39 @@ TEST(gtest, wc_ui_startup) {
         EXPECT_EQ(wc_ui_shutdown(ui), WC_SUCCESS);
 }
 
+bool g_should_accept_terms = false;
+wc_ui_callbacks_t g_ui_callbacks = {
+        .startup = [](wc_window_params_t params) -> wc_window_handle_t {
+                return (wc_window_handle_t)1;
+        },
+        .show_terms = [](wc_window_handle_t window, int *accepted,  bstring terms) -> wc_error_t {
+                if (!terms) {
+                        return WC_ERROR_INVALID_ARGUMENT;
+                }
+                *accepted = !!g_should_accept_terms;
+                return WC_SUCCESS;
+        },
+};
+
+TEST(gtest, wc_ui_terms) {
+        wc_ui_handle_t ui = nullptr;
+        int accepted = -1;
+        bstring bstr = blk2bstr(g_terms_of_service.c_str(), g_terms_of_service.size());
+        ASSERT_NE(bstr, nullptr);
+        EXPECT_EQ(wc_ui_startup(&ui, &g_ui_callbacks, nullptr), WC_SUCCESS);
+        ASSERT_NE(ui, nullptr);
+        EXPECT_EQ(wc_ui_show_terms(nullptr, &accepted, bstr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wc_ui_show_terms(ui, nullptr, bstr), WC_ERROR_INVALID_ARGUMENT);
+        EXPECT_EQ(wc_ui_show_terms(ui, &accepted, nullptr), WC_ERROR_INVALID_ARGUMENT);
+        g_should_accept_terms = false;
+        EXPECT_EQ(wc_ui_show_terms(ui, &accepted, bstr), WC_SUCCESS);
+        EXPECT_EQ(accepted, 0);
+        g_should_accept_terms = true;
+        EXPECT_EQ(wc_ui_show_terms(ui, &accepted, bstr), WC_SUCCESS);
+        EXPECT_EQ(accepted, 1);
+        EXPECT_EQ(wc_ui_shutdown(ui), WC_SUCCESS);
+}
+
 int main(int argc, char **argv) {
         ::testing::InitGoogleTest(&argc, argv);
         assert(wc_init() == WC_SUCCESS);

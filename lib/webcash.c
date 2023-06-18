@@ -1025,5 +1025,22 @@ wc_error_t wc_ui_shutdown(wc_ui_handle_t ui) {
         return WC_SUCCESS;
 }
 
+wc_error_t wc_ui_show_terms(
+        wc_ui_handle_t ui,
+        int *accepted,
+        bstring terms
+) {
+        if (!ui || !accepted || !terms) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        if (!ui->hwnd) {
+                return WC_ERROR_HEADLESS;
+        }
+        if (!ui->cb || !ui->cb->show_terms) {
+                return WC_ERROR_INVALID_ARGUMENT;
+        }
+        return ui->cb->show_terms(ui->hwnd, accepted, terms);
+}
+
 /* End of File
  */

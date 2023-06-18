@@ -96,6 +96,8 @@ typedef enum wc_error {
         WC_ERROR_NOT_CONNECTED,
         /** Connection to server failed */
         WC_ERROR_CONNECT_FAILED,
+        /** No user interface online */
+        WC_ERROR_HEADLESS,
         /** User interface startup failed */
         WC_ERROR_STARTUP_FAILED
 } wc_error_t;
@@ -919,6 +921,9 @@ typedef struct wc_ui_callbacks {
         /* Initialization */
         wc_window_handle_t (*startup)(wc_window_params_t params);
         void (*shutdown)(wc_window_handle_t window);
+
+        /* Terms of Service */
+        wc_error_t (*show_terms)(wc_window_handle_t window, int *accepted, bstring terms);
 } wc_ui_callbacks_t;
 
 /* Implementation details of this structure is private to the library. */
@@ -954,6 +959,29 @@ wc_error_t wc_ui_startup(
  * @return wc_error_t WC_SUCCESS or WC_ERROR_INVALID_ARGUMENT.
  */
 wc_error_t wc_ui_shutdown(wc_ui_handle_t ui);
+
+/**
+ * @brief Show the terms of service to the user, and record acceptance.
+ *
+ * This API is used to show the terms of service to the user, and request the
+ * user to accept.  The terms are passed to the user interface as a UTF-8
+ * encoded text/plain document.
+ *
+ * @param ui A connected user interface.
+ * @param accepted An out parameter to be filled in with the user's acceptance
+ * of the terms of service (non-zero indicates unacceptance).  Only valid if
+ * the function returns WC_SUCCESS.
+ * @param terms The terms of service to be shown to the user.
+ * @return wc_error_t WC_SUCCESS if the terms of service were successfully
+ * shown and the out parameter accepted has been filled, or an error code
+ * otherwise.  WC_SUCCESS does not mean the terms of service were accepted,
+ * but rather that the user interface was successfully shown and the user's
+ * yes/no response was recorded.
+ */
+wc_error_t wc_ui_show_terms(
+        wc_ui_handle_t ui,
+        int *accepted,
+        bstring terms);
 
 #ifdef __cplusplus
 }
