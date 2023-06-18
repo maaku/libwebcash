@@ -853,6 +853,7 @@ wc_error_t wc_storage_are_terms_accepted(
 ) {
         wc_error_t e = WC_SUCCESS;
         time_t t = 0;
+        int found = 0;
         if (!w || !terms || !(accepted || when)) {
                 return WC_ERROR_INVALID_ARGUMENT;
         }
@@ -866,13 +867,18 @@ wc_error_t wc_storage_are_terms_accepted(
         if (e != WC_SUCCESS) {
                 return e;
         }
-        if (when) {
-                if (t && !gmtime_r(&t, when)) {
+        found = (t != 0);
+        if (when && found) {
+                if (t + WC_TIME_EPOCH < t) {
+                        return WC_ERROR_OVERFLOW;
+                }
+                t += WC_TIME_EPOCH;
+                if (!gmtime_r(&t, when)) {
                         return WC_ERROR_DB_CORRUPT;
                 }
         }
         if (accepted) {
-                *accepted = (t != 0);
+                *accepted = found;
         }
         return WC_SUCCESS;
 }
@@ -894,16 +900,17 @@ wc_error_t wc_storage_accept_terms(
         }
         if (now) {
                 t = mktime(now);
-                if (t == (time_t)-1) {
+                if (t == (time_t)-1 || t < WC_TIME_EPOCH) {
                         return WC_ERROR_INVALID_ARGUMENT;
                 }
         } else {
                 t = time(NULL);
-                if (t == (time_t)-1) {
+                if (t == (time_t)-1 || t < WC_TIME_EPOCH) {
                         /* The only reason time() might fail is integer overflow. */
                         return WC_ERROR_OVERFLOW;
                 }
         }
+        t -= WC_TIME_EPOCH;
         return w->cb->accept_terms(w->db, terms, t);
 }
 
