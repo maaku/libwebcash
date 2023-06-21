@@ -7,15 +7,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#include "support/cleanse.h"
+#include "webcash.h"
 
-#include <string.h>
+#include <string.h> /* for memset */
 
 #if defined(_MSC_VER)
-#include <Windows.h> // For SecureZeroMemory.
+#include <Windows.h> /* For SecureZeroMemory. */
 #endif
 
-void memory_cleanse(void *ptr, size_t len)
+void wc_memory_cleanse(void *ptr, size_t len)
 {
 #if defined(_MSC_VER)
     /* SecureZeroMemory is guaranteed not to be optimized out by MSVC. */

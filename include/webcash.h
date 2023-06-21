@@ -14,6 +14,7 @@ extern "C" {
 
 #include <bstrlib.h>
 #include <sha2/sha256.h>
+#include <stdlib.h> /* for size_t */
 #include <time.h> /* for time_t, struct tm */
 
 /*****************************************************************************
@@ -69,6 +70,15 @@ extern "C" {
 /*****************************************************************************
  * Context-independent Webcash datastructures and APIs
  *****************************************************************************/
+
+/**
+ * @brief Secure overwrite a buffer (possibly containing secret data) with
+ * zero-bytes.  The write operation will not be optimized out by the compiler.
+ *
+ * @param ptr Pointer to the buffer to be overwritten.
+ * @param len Length of the buffer to be overwritten.
+ */
+void wc_memory_cleanse(void *ptr, size_t len);
 
 /**
  * @brief A webcash library error code.
@@ -234,7 +244,7 @@ typedef struct wc_secret {
 #ifdef __cplusplus
         wc_secret() : amount(WC_ZERO), serial(nullptr) {}
         wc_secret(const wc_secret &other) : amount(other.amount), serial(bstrcpy(other.serial)) {
-                if (serial == nullptr) {
+                if (serial == nullptr && other.serial != nullptr) {
                         throw std::bad_alloc();
                 }
         }
@@ -246,21 +256,39 @@ typedef struct wc_secret {
         wc_secret& operator=(const wc_secret &other) {
                 if (this != &other) {
                         amount = other.amount;
-                        bassign(serial, other.serial);
+                        if (serial != nullptr) {
+                                wc_memory_cleanse(bdata(serial), blength(serial));
+                                bdestroy(serial);
+                                serial = nullptr;
+                        }
+                        if (other.serial != nullptr) {
+                                serial = bstrcpy(other.serial);
+                                if (serial == nullptr) {
+                                        throw std::bad_alloc();
+                                }
+                        }
                 }
                 return *this;
         }
         wc_secret& operator=(wc_secret &&other) {
                 if (this != &other) {
                         amount = other.amount;
+                        if (serial != nullptr) {
+                                wc_memory_cleanse(bdata(serial), blength(serial));
+                                bdestroy(serial);
+                                serial = nullptr;
+                        }
                         serial = other.serial;
                         other.serial = nullptr;
                 }
                 return *this;
         }
         ~wc_secret() {
-                bdestroy(serial);
-                serial = nullptr;
+                if (serial != nullptr) {
+                        wc_memory_cleanse(bdata(serial), blength(serial));
+                        bdestroy(serial);
+                        serial = nullptr;
+                }
         }
 #endif
 } wc_secret_t;
@@ -599,9 +627,11 @@ typedef struct wc_terms {
         struct tm when; /* UTC time zone */
         bstring text; /* UTF-8 (text/plain) */
 #ifdef __cplusplus
-        wc_terms() : when{0}, text(nullptr) {}
+        wc_terms() : text(nullptr) {
+                memset(&when, 0, sizeof(when));
+        }
         wc_terms(const wc_terms &other) : when(other.when), text(bstrcpy(other.text)) {
-                if (text == nullptr) {
+                if (text == nullptr && other.text != nullptr) {
                         throw std::bad_alloc();
                 }
         }
@@ -613,21 +643,36 @@ typedef struct wc_terms {
         wc_terms& operator=(const wc_terms &other) {
                 if (this != &other) {
                         when = other.when;
-                        bassign(text, other.text);
+                        if (text != nullptr) {
+                                bdestroy(text);
+                                text = nullptr;
+                        }
+                        if (other.text != nullptr) {
+                                text = bstrcpy(other.text);
+                                if (text == nullptr) {
+                                        throw std::bad_alloc();
+                                }
+                        }
                 }
                 return *this;
         }
         wc_terms& operator=(wc_terms &&other) {
                 if (this != &other) {
                         when = other.when;
+                        if (text != nullptr) {
+                                bdestroy(text);
+                                text = nullptr;
+                        }
                         text = other.text;
                         other.text = nullptr;
                 }
                 return *this;
         }
         ~wc_terms() {
-                bdestroy(text);
-                text = nullptr;
+                if (text) {
+                        bdestroy(text);
+                        text = nullptr;
+                }
         }
 #endif
 } wc_terms_t;
@@ -646,9 +691,11 @@ typedef struct wc_db_terms {
         wc_time_t when; /* sec since WC_TIME_EPOCH */
         bstring text; /* UTF-8 (text/plain) */
 #ifdef __cplusplus
-        wc_db_terms() : when{0}, text(nullptr) {}
+        wc_db_terms() : text(nullptr) {
+                memset(&when, 0, sizeof(when));
+        }
         wc_db_terms(const wc_db_terms &other) : when(other.when), text(bstrcpy(other.text)) {
-                if (text == nullptr) {
+                if (text == nullptr && other.text != nullptr) {
                         throw std::bad_alloc();
                 }
         }
@@ -660,21 +707,36 @@ typedef struct wc_db_terms {
         wc_db_terms& operator=(const wc_db_terms &other) {
                 if (this != &other) {
                         when = other.when;
-                        bassign(text, other.text);
+                        if (text != nullptr) {
+                                bdestroy(text);
+                                text = nullptr;
+                        }
+                        if (other.text != nullptr) {
+                                text = bstrcpy(other.text);
+                                if (text == nullptr) {
+                                        throw std::bad_alloc();
+                                }
+                        }
                 }
                 return *this;
         }
         wc_db_terms& operator=(wc_db_terms &&other) {
                 if (this != &other) {
                         when = other.when;
+                        if (text != nullptr) {
+                                bdestroy(text);
+                                text = nullptr;
+                        }
                         text = other.text;
                         other.text = nullptr;
                 }
                 return *this;
         }
         ~wc_db_terms() {
-                bdestroy(text);
-                text = nullptr;
+                if (text) {
+                        bdestroy(text);
+                        text = nullptr;
+                }
         }
 #endif
 } wc_db_terms_t;

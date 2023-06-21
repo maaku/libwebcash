@@ -7,7 +7,6 @@
 
 #include "webcash.h"
 
-#include "support/cleanse.h"
 #include "sqlite3.h"
 
 #include <sha2/sha256.h>
@@ -658,7 +657,7 @@ wc_error_t wc_derive_serial(
                 bdestroy(*bstr);
         }
         *bstr = blk2bstr(buf, 64);
-        memory_cleanse(buf, 64);
+        wc_memory_cleanse(buf, 64);
         if (*bstr == NULL) {
                 return WC_ERROR_OUT_OF_MEMORY;
         }
@@ -717,7 +716,7 @@ void wc_derive_serials(
                 } while (count > 0);
         }
         while (n) {
-                memory_cleanse(blocks + 64*(--n), 48);
+                wc_memory_cleanse(blocks + 64*(--n), 48);
         }
 }
 
