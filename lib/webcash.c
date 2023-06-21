@@ -640,7 +640,7 @@ void wc_mining_8way(
 
 wc_error_t wc_derive_serial(
         bstring *bstr,
-        const struct sha256 *hdroot,
+        const struct sha256 *root,
         uint64_t chaincode,
         uint64_t depth
 ) {
@@ -648,10 +648,10 @@ wc_error_t wc_derive_serial(
         if (!bstr) {
                 return WC_ERROR_INVALID_ARGUMENT;
         }
-        if (!hdroot) {
+        if (!root) {
                 return WC_ERROR_INVALID_ARGUMENT;
         }
-        wc_derive_serials(buf, hdroot, chaincode, depth, 1);
+        wc_derive_serials(buf, root, chaincode, depth, 1);
         if (*bstr) {
                 /* prevent memory leaks */
                 bdestroy(*bstr);
@@ -666,7 +666,7 @@ wc_error_t wc_derive_serial(
 
 void wc_derive_serials(
         char out[],
-        const struct sha256 *hdroot,
+        const struct sha256 *root,
         uint64_t chaincode,
         uint64_t depth,
         size_t count
@@ -678,7 +678,7 @@ void wc_derive_serials(
                 return;
         }
         for (n = 0; n < (count < 8 ? count : 8); ++n) {
-                memcpy(   blocks + 64*n +  0, hdroot->u8, 32);
+                memcpy(   blocks + 64*n +  0, root->u8, 32);
                 WriteBE64(blocks + 64*n + 32, chaincode);
                         *(blocks + 64*n + 48) = 0x80; /* padding */
                 WriteBE64(blocks + 64*n + 56, (webcashwalletv1_midstate.bytes + 48) << 3);

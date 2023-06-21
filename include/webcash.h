@@ -569,7 +569,7 @@ void wc_mining_8way(
  * a caller-provided buffer and never fails.
  *
  * @param serial A pointer to a bstring to be filled with the generated serial.
- * @param hdroot The master secret to derive from.
+ * @param root The master secret to derive from.
  * @param chaincode The chaincode to use.
  * @param depth The depth of the secret to derive.
  * @return wc_error_t WC_SUCCESS, WC_ERROR_INVALID_ARGUMENT, or
@@ -577,7 +577,7 @@ void wc_mining_8way(
  */
 wc_error_t wc_derive_serial(
         bstring *bstr,
-        const struct sha256 *hdroot,
+        const struct sha256 *root,
         uint64_t chaincode,
         uint64_t depth);
 
@@ -596,14 +596,14 @@ wc_error_t wc_derive_serial(
  * value.]
  *
  * @param out A buffer to be filled with the generated secrets, of length at least count * 64 bytes.
- * @param hdroot The master secret to derive from.
+ * @param root The master secret to derive from.
  * @param chaincode The chaincode to use.
  * @param start The depth of the first secret to derive.
  * @param count The number of secrets to derive.
  */
 void wc_derive_serials(
         char out[],
-        const struct sha256 *hdroot,
+        const struct sha256 *root,
         uint64_t chaincode,
         uint64_t start,
         size_t count);
