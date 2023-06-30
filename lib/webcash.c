@@ -14,6 +14,7 @@
 #include <ctype.h>
 #include <inttypes.h>
 #include <stdint.h>
+#include <time.h>
 
 static unsigned char hexdigits[] = "0123456789abcdef";
 static unsigned char hexdigit_to_int(char c) {
