@@ -696,13 +696,13 @@ void wc_derive_serials(
          * each successive pass through the loop, until all serials have been
          * derived. */
         switch (count % 8) {
-        case 0: do {    WriteBE64(blocks + 64*7 + 40, depth + 7);
-        case 7:         WriteBE64(blocks + 64*6 + 40, depth + 6);
-        case 6:         WriteBE64(blocks + 64*5 + 40, depth + 5);
-        case 5:         WriteBE64(blocks + 64*4 + 40, depth + 4);
-        case 4:         WriteBE64(blocks + 64*3 + 40, depth + 3);
-        case 3:         WriteBE64(blocks + 64*2 + 40, depth + 2);
-        case 2:         WriteBE64(blocks + 64*1 + 40, depth + 1);
+        case 0: do {    WriteBE64(blocks + 64*7 + 40, depth + 7); /* fallthrough */
+        case 7:         WriteBE64(blocks + 64*6 + 40, depth + 6); /* fallthrough */
+        case 6:         WriteBE64(blocks + 64*5 + 40, depth + 5); /* fallthrough */
+        case 5:         WriteBE64(blocks + 64*4 + 40, depth + 4); /* fallthrough */
+        case 4:         WriteBE64(blocks + 64*3 + 40, depth + 3); /* fallthrough */
+        case 3:         WriteBE64(blocks + 64*2 + 40, depth + 2); /* fallthrough */
+        case 2:         WriteBE64(blocks + 64*1 + 40, depth + 1); /* fallthrough */
         case 1:         WriteBE64(blocks + 64*0 + 40, depth + 0);
                         m = (count - 1) % 8 + 1; /* count % 8, but with 0 mod 8 becoming 8 */
                         sha256_midstate((struct sha256*)out, webcashwalletv1_midstate.s, blocks, m);
